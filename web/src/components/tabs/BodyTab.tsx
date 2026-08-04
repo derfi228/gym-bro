@@ -3,54 +3,76 @@
 import { useMemo, useState } from "react";
 import type { MuscleId } from "@shared/types";
 import {
-  demoLoads,
   difficultyLabels,
   equipmentLabels,
+  evidenceLabels,
   exercisesFor,
   muscleNames,
+  scoreLabel,
+  sources,
 } from "@/lib/demo";
+import { useStore } from "@/lib/store";
 
 /**
- * Контуры мышц во фронтальной проекции.
- * Несколько путей на группу — для парных мышц (лево/право).
+ * Фигура нарисована половиной (x < 160) и зеркалится по центру.
+ * viewBox 0 0 320 720, центральная линия x = 160.
  */
-const anatomy: Record<MuscleId, string[]> = {
-  traps: [
-    "M117,56 C108,60 96,68 87,82 C96,80 104,78 112,74 C115,68 116,62 117,56 Z",
-    "M143,56 C152,60 164,68 173,82 C164,80 156,78 148,74 C145,68 144,62 143,56 Z",
-  ],
-  delts: [
-    "M86,82 C74,88 66,100 65,114 C64,122 68,127 75,126 C82,125 88,118 92,108 C95,98 93,88 86,82 Z",
-    "M174,82 C186,88 194,100 195,114 C196,122 192,127 185,126 C178,125 172,118 168,108 C165,98 167,88 174,82 Z",
-  ],
-  chest: [
-    "M128,80 C116,78 104,80 96,88 C90,94 89,104 92,112 C96,120 106,124 116,122 C124,120 128,114 128,106 Z",
-    "M132,80 C144,78 156,80 164,88 C170,94 171,104 168,112 C164,120 154,124 144,122 C136,120 132,114 132,106 Z",
-  ],
-  biceps: [
-    "M75,128 C68,134 64,144 63,156 C62,166 66,172 72,171 C78,170 83,162 85,150 C87,138 82,130 75,128 Z",
-    "M185,128 C192,134 196,144 197,156 C198,166 194,172 188,171 C182,170 177,162 175,150 C173,138 178,130 185,128 Z",
-  ],
-  forearms: [
-    "M71,174 C65,180 60,194 58,208 C56,220 59,226 64,225 C69,224 73,216 76,202 C79,188 77,177 71,174 Z",
-    "M189,174 C195,180 200,194 202,208 C204,220 201,226 196,225 C191,224 187,216 184,202 C181,188 183,177 189,174 Z",
-  ],
-  abs: [
-    "M114,124 C110,134 109,148 110,162 C111,176 114,188 118,196 C124,200 136,200 142,196 C146,188 149,176 150,162 C151,148 150,134 146,124 C136,128 124,128 114,124 Z",
-  ],
-  obliques: [
-    "M108,128 C102,138 100,152 101,166 C102,176 105,184 109,190 C110,178 109,164 110,150 C110,140 110,133 111,127 Z",
-    "M152,128 C158,138 160,152 159,166 C158,176 155,184 151,190 C150,178 151,164 150,150 C150,140 150,133 149,127 Z",
-  ],
-  quads: [
-    "M112,212 C104,220 99,238 98,258 C97,278 100,296 105,308 C112,312 120,310 124,304 C126,288 126,266 124,246 C122,230 118,218 112,212 Z",
-    "M148,212 C156,220 161,238 162,258 C163,278 160,296 155,308 C148,312 140,310 136,304 C134,288 134,266 136,246 C138,230 142,218 148,212 Z",
-  ],
-  calves: [
-    "M107,326 C101,334 98,350 98,366 C98,380 101,390 106,392 C112,393 117,386 118,372 C119,356 115,336 107,326 Z",
-    "M153,326 C159,334 162,350 162,366 C162,380 159,390 154,392 C148,393 143,386 142,372 C141,356 145,336 153,326 Z",
-  ],
+const silhouette = [
+  // торс
+  "M160,100 C151,101 146,105 143,112 C133,121 118,128 103,137 " +
+    "C110,152 116,178 119,204 C122,230 124,258 122,288 " +
+    "C120,312 118,330 121,352 C124,376 127,400 127,426 " +
+    "C136,432 150,434 160,434 Z",
+  // рука
+  "M104,136 C88,144 74,160 67,182 C61,203 60,232 61,262 " +
+    "C62,288 64,310 66,326 C61,344 56,368 54,392 C52,414 53,432 56,442 " +
+    "C51,458 49,478 53,492 C56,502 64,506 71,501 C78,496 80,480 78,462 " +
+    "C77,448 77,440 77,434 C81,412 85,386 89,360 C91,344 93,332 94,322 " +
+    "C97,298 99,270 100,242 C101,224 105,206 110,196 " +
+    "C111,176 110,153 104,136 Z",
+  // нога
+  "M128,430 C118,446 112,474 111,506 C110,540 113,570 117,592 " +
+    "C120,614 122,640 124,662 C126,680 128,694 130,704 " +
+    "C122,708 116,712 119,716 L157,716 C156,700 153,682 151,662 " +
+    "C148,638 146,614 145,592 C144,566 146,538 148,510 " +
+    "C150,480 152,452 153,434 Z",
+];
+
+const anatomy: Record<MuscleId, string> = {
+  traps:
+    "M153,106 C145,113 131,121 111,131 C123,139 141,142 156,143 C156,131 155,117 153,106 Z",
+  delts:
+    "M103,140 C90,148 79,163 75,181 C72,195 75,207 83,210 C93,213 102,204 107,190 C112,173 111,151 103,140 Z",
+  chest:
+    "M158,148 C137,146 120,151 112,162 C106,171 108,187 116,197 C127,208 143,213 155,213 C157,213 158,210 158,203 Z",
+  abs: "M156,226 C148,227 142,232 139,241 C136,253 136,280 138,306 C140,330 145,348 151,358 C154,362 156,360 156,353 Z",
+  obliques:
+    "M138,244 C131,250 127,264 125,282 C124,298 126,316 130,330 C134,340 138,345 142,347 C138,328 136,304 136,280 C136,262 137,250 138,244 Z",
+  biceps:
+    "M96,234 C89,238 84,251 82,268 C80,286 83,303 90,311 C96,317 102,312 103,300 C105,282 103,251 99,239 Z",
+  triceps:
+    "M81,230 C73,237 68,251 66,270 C64,288 67,305 73,312 C78,318 83,313 83,300 C83,282 82,251 84,237 Z",
+  forearms:
+    "M70,334 C63,347 58,368 56,392 C54,412 57,430 63,437 C69,443 75,437 76,424 C78,400 78,364 75,345 Z",
+  quads:
+    "M151,442 C138,446 128,460 122,480 C117,502 115,530 118,554 C121,572 128,581 137,580 C146,579 151,568 152,550 C154,518 154,476 151,442 Z",
+  calves:
+    "M147,604 C137,608 130,621 127,640 C124,657 125,673 129,682 C134,690 140,687 143,676 C146,657 149,626 147,604 Z",
 };
+
+/** Штриховка как на анатомическом атласе */
+const detailLines = [
+  "M140,252 L156,252",
+  "M139,278 L156,278",
+  "M139,304 L156,304",
+  "M143,330 L156,330",
+  "M117,159 C131,153 146,151 158,151",
+  "M94,146 C91,164 91,184 95,204",
+  "M136,452 C131,484 130,522 134,558",
+  "M137,612 C133,632 133,654 136,672",
+  "M83,238 C81,264 81,290 84,309",
+  "M56,444 C63,447 70,446 76,442",
+];
 
 const muscleOrder = Object.keys(anatomy) as MuscleId[];
 
@@ -61,22 +83,23 @@ function verdictFor(ratio: number) {
   return "Отстаёт";
 }
 
-export default function BodyTab() {
-  const [selected, setSelected] = useState<MuscleId>("delts");
+const MIRROR = "translate(320,0) scale(-1,1)";
 
-  const loads = useMemo(
-    () => new Map(demoLoads.map((l) => [l.muscleId, l])),
-    []
+export default function BodyTab() {
+  const { loads } = useStore();
+  const [selected, setSelected] = useState<MuscleId>("chest");
+
+  const byMuscle = useMemo(
+    () => new Map(loads.map((l) => [l.muscleId, l])),
+    [loads]
   );
-  const load = loads.get(selected)!;
+  const load = byMuscle.get(selected)!;
   const exercises = useMemo(() => exercisesFor(selected), [selected]);
-  const over = load.ratio > 1;
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Профиль */}
       <div className="card flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
           <span className="chip">182 см</span>
           <span className="chip">78 кг</span>
           <span className="chip">24 года</span>
@@ -85,19 +108,28 @@ export default function BodyTab() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
-        {/* Схема */}
-        <div className="card card-lit p-5 sm:p-6">
+        {/* ── Фигура ─────────────────────────────────────────────────── */}
+        <div className="card card-lit relative overflow-hidden p-5 sm:p-6">
+          <div
+            aria-hidden
+            className="aura pointer-events-none absolute left-1/2 top-1/3 h-72 w-72 -translate-x-1/2 rounded-full"
+            style={{
+              background:
+                "radial-gradient(closest-side, rgb(111 159 216 / 0.16), transparent)",
+            }}
+          />
+
           <svg
-            viewBox="0 0 260 420"
-            className="mx-auto w-full max-w-[290px]"
+            viewBox="0 0 320 720"
+            className="relative mx-auto w-full max-w-[250px]"
             aria-label="Схема тела: заполненность мышечных групп по недельному объёму"
           >
             <defs>
               {muscleOrder.map((id) => {
-                const ratio = loads.get(id)!.ratio;
+                const ratio = byMuscle.get(id)!.ratio;
                 const stop = `${Math.min(Math.max(ratio, 0), 1) * 100}%`;
                 return (
-                  // Заливка «снизу вверх»: сколько объёма набрано
+                  // Заливка снизу вверх: сколько объёма набрано
                   <linearGradient
                     key={id}
                     id={`fill-${id}`}
@@ -106,38 +138,51 @@ export default function BodyTab() {
                     x2="0"
                     y2="0"
                   >
-                    <stop offset="0" stopColor="var(--color-accent)" stopOpacity="0.9" />
-                    <stop offset={stop} stopColor="var(--color-accent)" stopOpacity="0.9" />
-                    <stop offset={stop} stopColor="var(--color-accent)" stopOpacity="0.07" />
-                    <stop offset="1" stopColor="var(--color-accent)" stopOpacity="0.07" />
+                    <stop offset="0" stopColor="var(--color-accent)" stopOpacity="0.85" />
+                    <stop offset={stop} stopColor="var(--color-accent)" stopOpacity="0.85" />
+                    <stop offset={stop} stopColor="var(--color-accent)" stopOpacity="0.06" />
+                    <stop offset="1" stopColor="var(--color-accent)" stopOpacity="0.06" />
                   </linearGradient>
                 );
               })}
             </defs>
 
-            {/* Нейтральные части фигуры — не кликаются */}
-            <g fill="var(--color-line)" opacity="0.9">
-              <ellipse cx="130" cy="32" rx="19" ry="23" />
-              <path d="M119,52 L141,52 L143,70 L117,70 Z" />
-              <path d="M108,194 C110,206 116,214 130,214 C144,214 150,206 152,194 Z" />
-              <ellipse cx="111" cy="316" rx="11" ry="9" />
-              <ellipse cx="149" cy="316" rx="11" ry="9" />
-              <ellipse cx="61" cy="233" rx="8" ry="10" />
-              <ellipse cx="199" cy="233" rx="8" ry="10" />
-              <ellipse cx="106" cy="400" rx="10" ry="7" />
-              <ellipse cx="154" cy="400" rx="10" ry="7" />
+            {/* Силуэт и нейтральные части */}
+            <g fill="#141b26" stroke="#233047" strokeWidth="1.2">
+              <ellipse cx="160" cy="48" rx="29" ry="39" />
+              <path d="M149,80 L171,80 L173,106 L147,106 Z" />
+              {silhouette.map((d, i) => (
+                <g key={i}>
+                  <path d={d} />
+                  <path d={d} transform={MIRROR} />
+                </g>
+              ))}
             </g>
 
+            {/* Мышцы */}
             {muscleOrder.map((id) => {
               const isActive = id === selected;
-              const isOver = loads.get(id)!.ratio > 1;
+              const isOver = byMuscle.get(id)!.ratio > 1;
+              const d = anatomy[id];
+              const stroke = isActive
+                ? "var(--color-accent-hi)"
+                : "var(--color-accent-dim)";
+              const paint = {
+                fill: `url(#fill-${id})`,
+                stroke,
+                strokeWidth: isActive ? 1.8 : 1,
+                style: isActive
+                  ? { filter: "drop-shadow(0 0 7px rgb(111 159 216 / 0.6))" }
+                  : undefined,
+                className: "transition-all duration-200",
+              };
               return (
                 <g
                   key={id}
                   role="button"
                   tabIndex={0}
-                  aria-label={`${muscleNames[id]}: ${loads.get(id)!.setsDone} из ${
-                    loads.get(id)!.setsTarget
+                  aria-label={`${muscleNames[id]}: ${byMuscle.get(id)!.setsDone} из ${
+                    byMuscle.get(id)!.setsTarget
                   } подходов`}
                   aria-pressed={isActive}
                   onClick={() => setSelected(id)}
@@ -149,66 +194,67 @@ export default function BodyTab() {
                   }}
                   className="cursor-pointer outline-none"
                 >
-                  {anatomy[id].map((d, i) => (
-                    <path
-                      key={i}
-                      d={d}
-                      fill={`url(#fill-${id})`}
-                      stroke={
-                        isActive
-                          ? "var(--color-accent-hi)"
-                          : "var(--color-accent-dim)"
-                      }
-                      strokeWidth={isActive ? 1.6 : 0.8}
-                      className="transition-all duration-200"
-                      style={
-                        isActive
-                          ? {
-                              filter:
-                                "drop-shadow(0 0 8px rgb(111 159 216 / 0.55))",
-                            }
-                          : undefined
-                      }
-                    />
-                  ))}
-                  {/* Перебор объёма — пульсирующий контур */}
-                  {isOver &&
-                    anatomy[id].map((d, i) => (
-                      <path
-                        key={`over-${i}`}
-                        d={d}
-                        fill="none"
-                        stroke="var(--color-accent-hi)"
-                        strokeWidth="1.4"
-                        strokeDasharray="3 3"
-                        className="aura pointer-events-none"
-                      />
-                    ))}
+                  <path d={d} {...paint} />
+                  <g transform={MIRROR}>
+                    <path d={d} {...paint} />
+                  </g>
+                  {isOver && (
+                    <g
+                      className="aura pointer-events-none"
+                      fill="none"
+                      stroke="var(--color-accent-hi)"
+                      strokeWidth="1.4"
+                      strokeDasharray="4 3"
+                    >
+                      <path d={d} />
+                      <path d={d} transform={MIRROR} />
+                    </g>
+                  )}
                 </g>
               );
             })}
+
+            {/* Анатомическая штриховка */}
+            <g
+              fill="none"
+              stroke="var(--color-accent-hi)"
+              strokeWidth="0.7"
+              opacity="0.4"
+              className="pointer-events-none"
+            >
+              {detailLines.map((d, i) => (
+                <g key={i}>
+                  <path d={d} />
+                  <path d={d} transform={MIRROR} />
+                </g>
+              ))}
+            </g>
           </svg>
 
-          {/* Все группы списком — дублирует схему для клавиатуры и мелких экранов */}
-          <div className="mt-5 flex flex-wrap justify-center gap-1.5">
-            {muscleOrder.map((id) => (
-              <button
-                key={id}
-                onClick={() => setSelected(id)}
-                aria-pressed={id === selected}
-                className={`rounded-pill border px-3 py-1 text-[11px] transition-colors ${
-                  id === selected
-                    ? "border-accent bg-accent/12 text-accent-hi"
-                    : "border-line text-dim hover:border-accent-dim hover:text-accent"
-                }`}
-              >
-                {muscleNames[id]}
-              </button>
-            ))}
+          <div className="relative mt-5 flex flex-wrap justify-center gap-1.5">
+            {muscleOrder.map((id) => {
+              const l = byMuscle.get(id)!;
+              return (
+                <button
+                  key={id}
+                  onClick={() => setSelected(id)}
+                  aria-pressed={id === selected}
+                  className={`rounded-pill border px-3 py-1 text-[11px] transition-colors ${
+                    id === selected
+                      ? "border-accent bg-accent/12 text-accent-hi"
+                      : l.ratio > 1
+                        ? "border-accent-dim text-accent"
+                        : "border-line text-dim hover:border-accent-dim hover:text-accent"
+                  }`}
+                >
+                  {muscleNames[id]}
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Выбранная группа */}
+        {/* ── Разбор группы ──────────────────────────────────────────── */}
         <div className="card card-lit flex flex-col p-5 sm:p-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <h2 className="font-serif text-4xl font-light tracking-wide text-accent-hi">
@@ -216,7 +262,7 @@ export default function BodyTab() {
             </h2>
             <div className="text-right">
               <p className="font-serif text-3xl font-light text-bright">
-                {load.setsDone}
+                {Math.round(load.setsDone * 10) / 10}
                 <span className="text-dim">/{load.setsTarget}</span>
               </p>
               <p className="kicker mt-1">подходов</p>
@@ -227,12 +273,10 @@ export default function BodyTab() {
             <span style={{ width: `${Math.min(load.ratio, 1) * 100}%` }} />
           </div>
 
-          <div className="mt-3 flex items-center gap-2">
+          <div className="mt-3 flex flex-wrap items-center gap-2">
             <span className="chip">{verdictFor(load.ratio)}</span>
-            {over && (
-              <span className="text-xs text-dim">
-                {load.setsDone} из {load.setsTarget} — снизьте объём
-              </span>
+            {load.ratio > 1 && (
+              <span className="text-xs text-dim">снизьте объём на неделе</span>
             )}
           </div>
 
@@ -246,23 +290,23 @@ export default function BodyTab() {
                 <div className="flex items-baseline justify-between gap-3">
                   <span className="text-sm text-bright">{ex.name}</span>
                   <span className="font-serif text-xl font-light text-accent">
-                    {ex.effectiveness}
+                    {scoreLabel(ex)}
                   </span>
                 </div>
                 <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                  <span className="chip">
-                    {difficultyLabels[ex.difficulty]}
-                  </span>
+                  <span className="chip">{evidenceLabels[ex.evidence]}</span>
+                  <span className="chip">{difficultyLabels[ex.difficulty]}</span>
                   <span className="chip">{equipmentLabels[ex.equipment]}</span>
-                  {ex.secondary.map((s) => (
-                    <span key={s} className="text-[10px] text-dim">
-                      + {muscleNames[s]}
-                    </span>
-                  ))}
                 </div>
+                {ex.note && <p className="mt-2 text-xs text-dim">{ex.note}</p>}
               </li>
             ))}
           </ul>
+
+          <p className="mt-5 text-[11px] leading-relaxed text-dim">
+            {sources[exercises[0]?.sourceId ?? "estimate"]?.note}. ЭМГ измеряет
+            активацию в моменте, а не прирост мышцы.
+          </p>
         </div>
       </div>
     </div>

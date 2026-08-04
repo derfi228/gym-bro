@@ -6,23 +6,30 @@ import {
   demoExercises,
   difficultyLabels,
   equipmentLabels,
+  evidenceLabels,
   muscleNames,
+  orderKey,
+  scoreLabel,
+  sources,
 } from "@/lib/demo";
 
 type Filter = MuscleId | "all";
-type Sort = "effectiveness" | "difficulty";
+type Sort = "effect" | "difficulty";
 
-const difficultyRank: Record<Difficulty, number> = {
-  low: 0,
-  medium: 1,
-  high: 2,
-};
-
+const difficultyRank: Record<Difficulty, number> = { low: 0, medium: 1, high: 2 };
 const muscleFilters = Object.keys(muscleNames) as MuscleId[];
+
+const pill = (active: boolean) =>
+  `rounded-pill border px-3 py-1 text-[11px] transition-colors ${
+    active
+      ? "border-accent bg-accent/12 text-accent-hi"
+      : "border-line text-dim hover:border-accent-dim hover:text-accent"
+  }`;
 
 export default function ExercisesTab() {
   const [filter, setFilter] = useState<Filter>("all");
-  const [sort, setSort] = useState<Sort>("effectiveness");
+  const [sort, setSort] = useState<Sort>("effect");
+  const [open, setOpen] = useState<string | null>(null);
 
   const list = useMemo(() => {
     const filtered =
@@ -32,105 +39,102 @@ export default function ExercisesTab() {
             (e) => e.primary === filter || e.secondary.includes(filter)
           );
     return [...filtered].sort((a, b) =>
-      sort === "effectiveness"
-        ? b.effectiveness - a.effectiveness
+      sort === "effect"
+        ? orderKey(a) - orderKey(b)
         : difficultyRank[a.difficulty] - difficultyRank[b.difficulty] ||
-          b.effectiveness - a.effectiveness
+          orderKey(a) - orderKey(b)
     );
   }, [filter, sort]);
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Фильтр по группе */}
       <div className="card p-4">
         <div className="flex flex-wrap gap-1.5">
-          <button
-            onClick={() => setFilter("all")}
-            aria-pressed={filter === "all"}
-            className={`rounded-pill border px-3 py-1 text-[11px] transition-colors ${
-              filter === "all"
-                ? "border-accent bg-accent/12 text-accent-hi"
-                : "border-line text-dim hover:border-accent-dim hover:text-accent"
-            }`}
-          >
+          <button onClick={() => setFilter("all")} className={pill(filter === "all")}>
             Все
           </button>
           {muscleFilters.map((m) => (
-            <button
-              key={m}
-              onClick={() => setFilter(m)}
-              aria-pressed={filter === m}
-              className={`rounded-pill border px-3 py-1 text-[11px] transition-colors ${
-                filter === m
-                  ? "border-accent bg-accent/12 text-accent-hi"
-                  : "border-line text-dim hover:border-accent-dim hover:text-accent"
-              }`}
-            >
+            <button key={m} onClick={() => setFilter(m)} className={pill(filter === m)}>
               {muscleNames[m]}
             </button>
           ))}
         </div>
 
-        <div className="mt-4 flex items-center justify-between gap-3 border-t border-line pt-3">
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-3">
           <p className="text-xs text-dim">{list.length} упражнений</p>
           <div className="flex gap-1.5">
-            {(
-              [
-                ["effectiveness", "По эффективности"],
-                ["difficulty", "По сложности"],
-              ] as [Sort, string][]
-            ).map(([key, label]) => (
-              <button
-                key={key}
-                onClick={() => setSort(key)}
-                aria-pressed={sort === key}
-                className={`rounded-pill border px-3 py-1 text-[11px] transition-colors ${
-                  sort === key
-                    ? "border-accent bg-accent/12 text-accent-hi"
-                    : "border-line text-dim hover:border-accent-dim hover:text-accent"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
+            <button onClick={() => setSort("effect")} className={pill(sort === "effect")}>
+              По активации
+            </button>
+            <button
+              onClick={() => setSort("difficulty")}
+              className={pill(sort === "difficulty")}
+            >
+              По сложности
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Список */}
       <ul className="grid gap-2 sm:grid-cols-2">
-        {list.map((ex, i) => (
-          <li
-            key={ex.id}
-            className="card reveal p-4"
-            style={{ "--i": Math.min(i, 12) } as React.CSSProperties}
-          >
-            <div className="flex items-baseline justify-between gap-3">
-              <span className="text-sm text-bright">{ex.name}</span>
-              <span className="font-serif text-2xl font-light text-accent">
-                {ex.effectiveness}
-              </span>
-            </div>
+        {list.map((ex, i) => {
+          const isOpen = open === ex.id;
+          return (
+            <li key={ex.id}>
+              <button
+                onClick={() => setOpen(isOpen ? null : ex.id)}
+                aria-expanded={isOpen}
+                className="card reveal w-full p-4 text-left transition-colors hover:border-accent-dim"
+                style={{ "--i": Math.min(i, 12) } as React.CSSProperties}
+              >
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="text-sm text-bright">{ex.name}</span>
+                  <span className="shrink-0 font-serif text-2xl font-light text-accent">
+                    {scoreLabel(ex)}
+                  </span>
+                </div>
 
-            <div className="meter mt-3">
-              <span style={{ width: `${ex.effectiveness}%` }} />
-            </div>
+                {ex.emgPercent !== null && (
+                  <div className="meter mt-3">
+                    <span style={{ width: `${ex.emgPercent}%` }} />
+                  </div>
+                )}
 
-            <div className="mt-3 flex flex-wrap items-center gap-1.5">
-              <span className="chip">{muscleNames[ex.primary]}</span>
-              <span className="chip">{difficultyLabels[ex.difficulty]}</span>
-              <span className="chip">{equipmentLabels[ex.equipment]}</span>
-            </div>
+                <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                  <span className="chip">{muscleNames[ex.primary]}</span>
+                  <span className="chip">{evidenceLabels[ex.evidence]}</span>
+                  <span className="chip">{difficultyLabels[ex.difficulty]}</span>
+                  <span className="chip">{equipmentLabels[ex.equipment]}</span>
+                </div>
 
-            {ex.secondary.length > 0 && (
-              <p className="mt-2.5 text-[11px] text-dim">
-                Также: {ex.secondary.map((s) => muscleNames[s]).join(", ")}
-              </p>
-            )}
-            {ex.note && <p className="mt-2 text-xs text-dim">{ex.note}</p>}
-          </li>
-        ))}
+                {isOpen && (
+                  <div className="mt-4 border-t border-line pt-3">
+                    {ex.secondary.length > 0 && (
+                      <p className="text-xs text-dim">
+                        Также работают:{" "}
+                        {ex.secondary.map((s) => muscleNames[s]).join(", ")}
+                      </p>
+                    )}
+                    {ex.note && (
+                      <p className="mt-2 text-xs leading-relaxed text-bright">
+                        {ex.note}
+                      </p>
+                    )}
+                    <p className="mt-2.5 text-[11px] leading-relaxed text-dim">
+                      {sources[ex.sourceId]?.note}
+                    </p>
+                  </div>
+                )}
+              </button>
+            </li>
+          );
+        })}
       </ul>
+
+      <p className="px-1 text-[11px] leading-relaxed text-dim">
+        ЭМГ измеряет активацию мышцы в моменте и не предсказывает её рост.
+        Цифры помогают выбрать между упражнениями, но не заменяют объём и прогрессию.
+      </p>
     </div>
   );
 }

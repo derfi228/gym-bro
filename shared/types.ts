@@ -32,6 +32,7 @@ export type MuscleId =
   | "delts"
   | "chest"
   | "biceps"
+  | "triceps"
   | "forearms"
   | "abs"
   | "obliques"
@@ -73,6 +74,25 @@ export interface BodyMap {
 
 export type Difficulty = "low" | "medium" | "high";
 
+/**
+ * Насколько цифра эффективности подкреплена данными.
+ * - emg: ЭМГ-активация в % от лучшего упражнения того же исследования
+ * - ranking: исследование дало порядок, но не публиковало проценты
+ * - estimate: исследования нет, значение экспертное
+ *
+ * Важно: ЭМГ показывает острую активацию, а не прирост мышцы.
+ * Это ориентир при выборе упражнения, а не прогноз гипертрофии.
+ */
+export type EvidenceLevel = "emg" | "ranking" | "estimate";
+
+export interface StudySource {
+  id: string;
+  /** Короткая подпись для интерфейса */
+  label: string;
+  /** Что именно измеряли */
+  note: string;
+}
+
 export interface Exercise {
   id: string;
   name: string;
@@ -80,8 +100,12 @@ export interface Exercise {
   primary: MuscleId;
   /** Дополнительно вовлечённые мышцы */
   secondary: MuscleId[];
-  /** Эффективность для primary-мышцы, 0..100 */
-  effectiveness: number;
+  /** ЭМГ-активация целевой мышцы, % от лучшего в исследовании. null — чисел нет */
+  emgPercent: number | null;
+  /** Место в рейтинге исследования, если проценты не публиковались */
+  rank?: number;
+  evidence: EvidenceLevel;
+  sourceId: string;
   /** Сложность техники */
   difficulty: Difficulty;
   equipment: Equipment;

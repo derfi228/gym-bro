@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { StoreProvider } from "@/lib/store";
 import Splash from "@/components/Splash";
 import BodyTab from "@/components/tabs/BodyTab";
 import ExercisesTab from "@/components/tabs/ExercisesTab";
@@ -30,6 +31,14 @@ const tabs: {
 ];
 
 export default function App() {
+  return (
+    <StoreProvider>
+      <Shell />
+    </StoreProvider>
+  );
+}
+
+function Shell() {
   const [tab, setTab] = useState<TabId>("body");
 
   return (
@@ -54,7 +63,7 @@ export default function App() {
         {tab === "body" && <BodyTab />}
         {tab === "exercises" && <ExercisesTab />}
         {tab === "program" && <ProgramTab />}
-        {tab === "gymbro" && <GymBroTab />}
+        {tab === "gymbro" && <GymBroTab onNavigate={setTab} />}
         {tab === "challenges" && <ChallengesTab />}
       </main>
 

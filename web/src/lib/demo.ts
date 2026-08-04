@@ -392,3 +392,11 @@ export function exercisesFor(muscleId: MuscleId): Exercise[] {
     .filter((e) => e.primary === muscleId)
     .sort((a, b) => b.effectiveness - a.effectiveness);
 }
+
+const byId = new Map(demoExercises.map((e) => [e.id, e]));
+
+export function exerciseById(id: string): Exercise {
+  const found = byId.get(id);
+  if (!found) throw new Error(`Неизвестное упражнение: ${id}`);
+  return found;
+}

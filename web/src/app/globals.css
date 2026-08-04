@@ -247,6 +247,82 @@ h3 {
   animation: draw 1.5s cubic-bezier(0.3, 0.6, 0.3, 1) 0.4s forwards;
 }
 
+/* ── Заставка при входе ──────────────────────────────────────────────────── */
+
+/* Логотип: буквы съезжаются из разрежения */
+@keyframes splashWord {
+  from {
+    opacity: 0;
+    letter-spacing: 0.55em;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    letter-spacing: 0.16em;
+    transform: none;
+  }
+}
+.splash-word {
+  animation: splashWord 1.2s cubic-bezier(0.22, 0.7, 0.3, 1) both;
+}
+
+/* Линия под логотипом раскрывается от центра */
+@keyframes splashLine {
+  from {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+.splash-line {
+  transform-origin: center;
+  animation: splashLine 0.9s cubic-bezier(0.22, 0.7, 0.3, 1) 0.45s both;
+}
+
+@keyframes splashSub {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.splash-sub {
+  animation: splashSub 0.7s ease 0.9s both;
+}
+
+/* ── Нижняя панель ───────────────────────────────────────────────────────── */
+
+.tabbar {
+  background: rgb(15 20 29 / 0.92);
+  border: 1px solid var(--color-line);
+  border-radius: 100px;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 10px 40px rgb(0 0 0 / 0.5);
+}
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 9px 6px;
+  border-radius: 100px;
+  color: var(--color-dim);
+  transition: color 0.18s, background 0.18s;
+  cursor: pointer;
+}
+.tab:hover {
+  color: var(--color-accent);
+}
+.tab[aria-selected="true"] {
+  color: var(--color-accent-hi);
+  background: rgb(var(--accent-rgb) / 0.12);
+}
+
 /* ── Доступность ─────────────────────────────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {

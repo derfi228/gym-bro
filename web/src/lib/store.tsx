@@ -7,7 +7,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import type { MuscleId, MuscleLoad } from "@shared/types";
+import type { ExerciseWeights, MuscleId, MuscleLoad } from "@shared/types";
 import { demoExercises, exerciseById, exercisesFor, initialLoads } from "./demo";
 
 /* ── Модель программы в интерфейсе ────────────────────────────────────────── */
@@ -146,6 +146,13 @@ type Store = {
   programs: Program[];
   activeProgramId: string | null;
   restrictions: MuscleId[];
+  /** Пиковый и рабочий вес по упражнениям */
+  weights: Record<string, ExerciseWeights>;
+  setWeight: (
+    exerciseId: string,
+    field: "peakKg" | "workingKg",
+    value: number | undefined
+  ) => void;
   /** Отметить выполненный подход: заполняет схему тела */
   logSet: (exerciseId: string) => void;
   swapExercise: (programId: string, slotKey: string, exerciseId: string) => void;
@@ -163,6 +170,21 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [programs, setPrograms] = useState<Program[]>(presetPrograms);
   const [activeProgramId, setActiveProgramId] = useState<string | null>(null);
   const [restrictions, setRestrictions] = useState<MuscleId[]>([]);
+  const [weights, setWeights] = useState<Record<string, ExerciseWeights>>({});
+
+  const setWeight = useCallback(
+    (
+      exerciseId: string,
+      field: "peakKg" | "workingKg",
+      value: number | undefined
+    ) => {
+      setWeights((prev) => ({
+        ...prev,
+        [exerciseId]: { ...prev[exerciseId], exerciseId, [field]: value },
+      }));
+    },
+    []
+  );
 
   /** Подход добавляет объём целевой мышце и половину — вспомогательным */
   const logSet = useCallback((exerciseId: string) => {
@@ -237,6 +259,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       programs,
       activeProgramId,
       restrictions,
+      weights,
+      setWeight,
       logSet,
       swapExercise,
       setProgramDuration,
@@ -250,6 +274,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       programs,
       activeProgramId,
       restrictions,
+      weights,
+      setWeight,
       logSet,
       swapExercise,
       setProgramDuration,

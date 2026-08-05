@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import ExerciseDetail from "@/components/ExerciseDetail";
 import {
   buildProgram,
   programMinutes,
@@ -16,28 +17,24 @@ import {
   exercisesFor,
   muscleNames,
   scoreLabel,
-  sources,
+  splits,
 } from "@/lib/demo";
 
 const RING = 2 * Math.PI * 86;
-
 const mmss = (t: number) =>
   `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`;
 
 export default function ProgramTab() {
-  const store = useStore();
-  const { programs, activeProgramId, openProgram } = store;
+  const { programs, activeProgramId, openProgram } = useStore();
   const [openSlot, setOpenSlot] = useState<string | null>(null);
 
   const program = programs.find((p) => p.id === activeProgramId) ?? null;
-
-  // Сброс выбранного упражнения при смене программы
   useEffect(() => setOpenSlot(null), [activeProgramId]);
 
   if (!program) return <ProgramList />;
   if (openSlot)
     return (
-      <ExerciseDetail
+      <SlotDetail
         program={program}
         slotKey={openSlot}
         onBack={() => setOpenSlot(null)}
@@ -52,15 +49,16 @@ export default function ProgramTab() {
   );
 }
 
-/* ── Уровень 1: список программ ───────────────────────────────────────────── */
+/* ── Уровень 1: список ────────────────────────────────────────────────────── */
 
 function ProgramList() {
   const { programs, openProgram, addProgram, loads, restrictions } = useStore();
   const [minutes, setMinutes] = useState(40);
+  const [openSplit, setOpenSplit] = useState<string | null>(null);
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Своё время — произвольное значение, а не набор кнопок */}
+      {/* Своё время */}
       <div className="card card-lit p-5 sm:p-6">
         <p className="kicker">Собрать под своё время</p>
 
@@ -75,9 +73,7 @@ function ProgramList() {
             max={120}
             value={minutes}
             onChange={(e) =>
-              setMinutes(
-                Math.min(120, Math.max(10, Number(e.target.value) || 10))
-              )
+              setMinutes(Math.min(120, Math.max(10, Number(e.target.value) || 10)))
             }
             aria-label="Длительность тренировки в минутах"
             className="w-20 rounded-pill border border-line bg-accent/[0.04] px-3 py-1.5 text-center text-sm text-bright outline-none focus:border-accent"
@@ -117,8 +113,71 @@ function ProgramList() {
         </p>
       </div>
 
-      <p className="kicker px-1">Программы</p>
+      {/* Известные методики */}
+      <p className="kicker px-1">Известные методики</p>
+      <ul className="flex flex-col gap-2.5">
+        {splits.map((s, i) => {
+          const isOpen = openSplit === s.id;
+          return (
+            <li key={s.id}>
+              <button
+                onClick={() => setOpenSplit(isOpen ? null : s.id)}
+                aria-expanded={isOpen}
+                className="card reveal w-full p-5 text-left transition-colors hover:border-accent-dim"
+                style={{ "--i": i } as React.CSSProperties}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-[15px] text-bright">{s.name}</p>
+                    <p className="mt-1.5 text-xs text-dim">
+                      {s.daysPerWeek} дн/нед · каждая группа {s.frequencyPerWeek}{" "}
+                      {s.frequencyPerWeek === 1 ? "раз" : "раза"} · {s.repRange}{" "}
+                      повторов
+                    </p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="font-serif text-3xl font-light text-accent">
+                      {s.evidenceScore}
+                    </p>
+                    <p className="kicker mt-0.5">по данным</p>
+                  </div>
+                </div>
 
+                <div className="meter mt-3.5">
+                  <span style={{ width: `${s.evidenceScore}%` }} />
+                </div>
+
+                {isOpen && (
+                  <div className="mt-4 border-t border-line pt-3.5">
+                    <p className="text-sm leading-relaxed text-bright">
+                      {s.evidenceNote}
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      <span className="chip">
+                        {s.weeklySetsPerMuscle} подходов в неделю
+                      </span>
+                      <span className="chip">
+                        {s.level === "novice"
+                          ? "Новичок"
+                          : s.level === "intermediate"
+                            ? "Средний"
+                            : "Продвинутый"}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      <p className="px-1 text-[11px] leading-relaxed text-dim">
+        Оценка отражает, насколько методика ложится на данные о недельном объёме
+        и частоте — не на популярность.
+      </p>
+
+      {/* Мои программы */}
+      <p className="kicker mt-2 px-1">Мои программы</p>
       <ul className="flex flex-col gap-2.5">
         {programs.map((p, i) => {
           const muscles = [
@@ -143,7 +202,6 @@ function ProgramList() {
                     <span className="ml-1 text-sm text-dim">мин</span>
                   </p>
                 </div>
-
                 <div className="mt-4 flex flex-wrap gap-1.5">
                   {p.aiGenerated && <span className="chip">GymBro</span>}
                   {muscles.map((m) => (
@@ -152,11 +210,8 @@ function ProgramList() {
                     </span>
                   ))}
                 </div>
-
                 {p.note && (
-                  <p className="mt-3 text-xs leading-relaxed text-dim">
-                    {p.note}
-                  </p>
+                  <p className="mt-3 text-xs leading-relaxed text-dim">{p.note}</p>
                 )}
               </button>
             </li>
@@ -214,9 +269,7 @@ function ProgramDetail({
           max={120}
           step={1}
           value={program.targetMin}
-          onChange={(e) =>
-            setProgramDuration(program.id, Number(e.target.value))
-          }
+          onChange={(e) => setProgramDuration(program.id, Number(e.target.value))}
           aria-label="Изменить длительность программы"
           className="mt-5 w-full accent-[var(--color-accent)]"
         />
@@ -269,7 +322,6 @@ function ProgramDetail({
         )}
       </ul>
 
-      {/* Таймер отдыха */}
       <div className="card card-lit flex flex-col items-center p-6">
         <p className="kicker">Отдых</p>
         <div className="relative mt-5 grid place-items-center">
@@ -299,16 +351,16 @@ function ProgramDetail({
           </div>
         </div>
         <div className="mt-5 flex flex-wrap justify-center gap-2">
-          {program.slots.slice(0, 3).map((s) => (
+          {[...new Set(program.slots.map((s) => s.rest))].slice(0, 3).map((r) => (
             <button
-              key={s.key}
+              key={r}
               onClick={() => {
-                setRestTotal(s.rest);
-                setRestLeft(s.rest);
+                setRestTotal(r);
+                setRestLeft(r);
               }}
               className="btn-ghost px-3 py-1.5 text-[11px]"
             >
-              {s.rest} с
+              {r} с
             </button>
           ))}
           <button
@@ -323,9 +375,9 @@ function ProgramDetail({
   );
 }
 
-/* ── Уровень 3: упражнение ────────────────────────────────────────────────── */
+/* ── Уровень 3: упражнение в программе ────────────────────────────────────── */
 
-function ExerciseDetail({
+function SlotDetail({
   program,
   slotKey,
   onBack,
@@ -350,90 +402,61 @@ function ExerciseDetail({
         ← {program.name}
       </button>
 
-      <div className="card card-lit p-5 sm:p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0">
-            <h2 className="font-serif text-3xl font-light leading-tight text-bright">
-              {ex.name}
-            </h2>
-            <p className="mt-2 text-sm text-dim">
-              {slot.sets} подхода × {slot.reps} · отдых {slot.rest} с
+      <ExerciseDetail exercise={ex}>
+        <div className="card card-lit p-5 sm:p-6">
+          <p className="kicker">В этой программе</p>
+          <p className="mt-3 text-sm text-bright">
+            {slot.sets} подхода × {slot.reps} · отдых {slot.rest} с
+          </p>
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            <button
+              onClick={() => {
+                logSet(ex.id);
+                setLogged((n) => n + 1);
+              }}
+              className="btn"
+            >
+              Отметить подход
+            </button>
+            <p className="text-xs text-dim">
+              {logged > 0
+                ? `Записано ${logged} — схема тела обновилась`
+                : "Запись подхода заполняет мышцы на схеме"}
             </p>
           </div>
-          <p className="shrink-0 font-serif text-4xl font-light text-accent">
-            {scoreLabel(ex)}
-          </p>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-1.5">
-          <span className="chip">{muscleNames[ex.primary]}</span>
-          <span className="chip">{evidenceLabels[ex.evidence]}</span>
-          <span className="chip">{difficultyLabels[ex.difficulty]}</span>
-          <span className="chip">{equipmentLabels[ex.equipment]}</span>
-        </div>
-
-        {ex.secondary.length > 0 && (
-          <p className="mt-3 text-xs text-dim">
-            Также работают: {ex.secondary.map((s) => muscleNames[s]).join(", ")}
-          </p>
-        )}
-        {ex.note && (
-          <div className="callout mt-4">
-            <p className="text-sm leading-relaxed text-bright">{ex.note}</p>
-          </div>
-        )}
-        <p className="mt-4 text-[11px] leading-relaxed text-dim">
-          {sources[ex.sourceId]?.note}
-        </p>
-
-        <div className="mt-5 flex flex-wrap items-center gap-3">
-          <button
-            onClick={() => {
-              logSet(ex.id);
-              setLogged((n) => n + 1);
-            }}
-            className="btn"
-          >
-            Отметить подход
-          </button>
-          <p className="text-xs text-dim">
-            {logged > 0
-              ? `Записано ${logged} — схема тела обновилась`
-              : `Запись подхода заполняет ${muscleNames[ex.primary].toLowerCase()} на схеме`}
-          </p>
-        </div>
-      </div>
-
-      <div className="card p-5">
-        <p className="kicker">Заменить на ту же группу</p>
-        <ul className="mt-4 flex flex-col gap-1.5">
-          {alternatives.map((alt) => (
-            <li key={alt.id}>
-              <button
-                onClick={() => {
-                  swapExercise(program.id, slot.key, alt.id);
-                  onBack();
-                }}
-                className="flex w-full items-center justify-between gap-3 rounded-[12px] border border-line px-3.5 py-2.5 text-left transition-colors hover:border-accent-dim hover:bg-accent/6"
-              >
-                <span className="min-w-0">
-                  <span className="block truncate text-[13px] text-bright">
-                    {alt.name}
+        <div className="card p-5">
+          <p className="kicker">Заменить на ту же группу</p>
+          <ul className="mt-4 flex flex-col gap-1.5">
+            {alternatives.map((alt) => (
+              <li key={alt.id}>
+                <button
+                  onClick={() => {
+                    swapExercise(program.id, slot.key, alt.id);
+                    onBack();
+                  }}
+                  className="flex w-full items-center justify-between gap-3 rounded-[12px] border border-line px-3.5 py-2.5 text-left transition-colors hover:border-accent-dim hover:bg-accent/6"
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate text-[13px] text-bright">
+                      {alt.name}
+                    </span>
+                    <span className="text-[10px] text-dim">
+                      {evidenceLabels[alt.evidence]} ·{" "}
+                      {difficultyLabels[alt.difficulty]} ·{" "}
+                      {equipmentLabels[alt.equipment]}
+                    </span>
                   </span>
-                  <span className="text-[10px] text-dim">
-                    {evidenceLabels[alt.evidence]} ·{" "}
-                    {difficultyLabels[alt.difficulty]} ·{" "}
-                    {equipmentLabels[alt.equipment]}
+                  <span className="font-serif text-base font-light text-accent">
+                    {scoreLabel(alt)}
                   </span>
-                </span>
-                <span className="font-serif text-base font-light text-accent">
-                  {scoreLabel(alt)}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </ExerciseDetail>
     </div>
   );
 }

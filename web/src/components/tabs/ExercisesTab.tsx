@@ -2,15 +2,16 @@
 
 import { useMemo, useState } from "react";
 import type { Difficulty, MuscleId } from "@shared/types";
+import ExerciseDetail from "@/components/ExerciseDetail";
 import {
   demoExercises,
   difficultyLabels,
   equipmentLabels,
   evidenceLabels,
+  exerciseById,
   muscleNames,
   orderKey,
   scoreLabel,
-  sources,
 } from "@/lib/demo";
 
 type Filter = MuscleId | "all";
@@ -46,6 +47,20 @@ export default function ExercisesTab() {
     );
   }, [filter, sort]);
 
+  if (open) {
+    return (
+      <div className="flex flex-col gap-4">
+        <button
+          onClick={() => setOpen(null)}
+          className="btn-ghost self-start px-4 py-1.5 text-[12px]"
+        >
+          ← Все упражнения
+        </button>
+        <ExerciseDetail exercise={exerciseById(open)} />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div className="card p-4">
@@ -77,64 +92,42 @@ export default function ExercisesTab() {
       </div>
 
       <ul className="grid gap-2 sm:grid-cols-2">
-        {list.map((ex, i) => {
-          const isOpen = open === ex.id;
-          return (
-            <li key={ex.id}>
-              <button
-                onClick={() => setOpen(isOpen ? null : ex.id)}
-                aria-expanded={isOpen}
-                className="card reveal w-full p-4 text-left transition-colors hover:border-accent-dim"
-                style={{ "--i": Math.min(i, 12) } as React.CSSProperties}
-              >
-                <div className="flex items-baseline justify-between gap-3">
-                  <span className="text-sm text-bright">{ex.name}</span>
-                  <span className="shrink-0 font-serif text-2xl font-light text-accent">
-                    {scoreLabel(ex)}
-                  </span>
+        {list.map((ex, i) => (
+          <li key={ex.id}>
+            <button
+              onClick={() => setOpen(ex.id)}
+              className="card reveal w-full p-4 text-left transition-colors hover:border-accent-dim"
+              style={{ "--i": Math.min(i, 12) } as React.CSSProperties}
+            >
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="text-sm text-bright">{ex.name}</span>
+                <span className="shrink-0 font-serif text-2xl font-light text-accent">
+                  {scoreLabel(ex)}
+                </span>
+              </div>
+
+              {ex.emgPercent !== null && (
+                <div className="meter mt-3">
+                  <span style={{ width: `${ex.emgPercent}%` }} />
                 </div>
+              )}
 
-                {ex.emgPercent !== null && (
-                  <div className="meter mt-3">
-                    <span style={{ width: `${ex.emgPercent}%` }} />
-                  </div>
-                )}
+              <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                <span className="chip">{muscleNames[ex.primary]}</span>
+                <span className="chip">{evidenceLabels[ex.evidence]}</span>
+                <span className="chip">{difficultyLabels[ex.difficulty]}</span>
+                <span className="chip">{equipmentLabels[ex.equipment]}</span>
+              </div>
 
-                <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                  <span className="chip">{muscleNames[ex.primary]}</span>
-                  <span className="chip">{evidenceLabels[ex.evidence]}</span>
-                  <span className="chip">{difficultyLabels[ex.difficulty]}</span>
-                  <span className="chip">{equipmentLabels[ex.equipment]}</span>
-                </div>
-
-                {isOpen && (
-                  <div className="mt-4 border-t border-line pt-3">
-                    {ex.secondary.length > 0 && (
-                      <p className="text-xs text-dim">
-                        Также работают:{" "}
-                        {ex.secondary.map((s) => muscleNames[s]).join(", ")}
-                      </p>
-                    )}
-                    {ex.note && (
-                      <p className="mt-2 text-xs leading-relaxed text-bright">
-                        {ex.note}
-                      </p>
-                    )}
-                    <p className="mt-2.5 text-[11px] leading-relaxed text-dim">
-                      {sources[ex.sourceId]?.note}
-                    </p>
-                  </div>
-                )}
-              </button>
-            </li>
-          );
-        })}
+              {ex.secondary.length > 0 && (
+                <p className="mt-2.5 text-[11px] text-dim">
+                  Также: {ex.secondary.map((s) => muscleNames[s]).join(", ")}
+                </p>
+              )}
+            </button>
+          </li>
+        ))}
       </ul>
-
-      <p className="px-1 text-[11px] leading-relaxed text-dim">
-        ЭМГ измеряет активацию мышцы в моменте и не предсказывает её рост.
-        Цифры помогают выбрать между упражнениями, но не заменяют объём и прогрессию.
-      </p>
     </div>
   );
 }

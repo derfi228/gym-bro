@@ -31,13 +31,19 @@ export type MuscleId =
   | "traps"
   | "delts"
   | "chest"
+  | "back"
   | "biceps"
   | "triceps"
   | "forearms"
   | "abs"
   | "obliques"
+  | "glutes"
   | "quads"
+  | "hamstrings"
   | "calves";
+
+/** На какой проекции схемы видна мышца */
+export type BodyView = "front" | "back";
 
 export interface Muscle {
   id: MuscleId;
@@ -93,6 +99,12 @@ export interface StudySource {
   note: string;
 }
 
+/**
+ * Насколько мышца вовлечена в упражнение, 0..1.
+ * Используется для подсветки на схеме тела: чем выше, тем ярче.
+ */
+export type Involvement = Partial<Record<MuscleId, number>>;
+
 export interface Exercise {
   id: string;
   name: string;
@@ -100,6 +112,10 @@ export interface Exercise {
   primary: MuscleId;
   /** Дополнительно вовлечённые мышцы */
   secondary: MuscleId[];
+  /** Вовлечённость по группам, включая primary */
+  involvement: Involvement;
+  /** Техника и на что смотреть */
+  description: string;
   /** ЭМГ-активация целевой мышцы, % от лучшего в исследовании. null — чисел нет */
   emgPercent: number | null;
   /** Место в рейтинге исследования, если проценты не публиковались */
@@ -111,6 +127,34 @@ export interface Exercise {
   equipment: Equipment;
   /** Короткое пояснение: за счёт чего работает / на что смотреть */
   note?: string;
+}
+
+/** Личные веса пользователя в упражнении */
+export interface ExerciseWeights {
+  exerciseId: string;
+  /** Пиковый вес — разовый максимум, кг */
+  peakKg?: number;
+  /** Рабочий вес, кг */
+  workingKg?: number;
+}
+
+/* ── Готовые методики ─────────────────────────────────────────────────────── */
+
+export interface TrainingSplit {
+  id: string;
+  name: string;
+  /** Как часто каждая группа получает нагрузку за неделю */
+  frequencyPerWeek: number;
+  daysPerWeek: number;
+  /** Подходов на группу в неделю */
+  weeklySetsPerMuscle: string;
+  repRange: string;
+  level: TrainingLevel;
+  /** Что об этой методике говорят исследования */
+  evidenceNote: string;
+  /** Оценка 0..100: насколько методика соответствует данным по объёму и частоте */
+  evidenceScore: number;
+  sourceId: string;
 }
 
 export type Equipment = "barbell" | "dumbbell" | "machine" | "bodyweight" | "cable";

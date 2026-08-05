@@ -58,6 +58,18 @@ export function SparkIcon({ className }: Props) {
   );
 }
 
+/** Развернуть фигуру: стрелки по кругу */
+export function RotateIcon({ className }: Props) {
+  return (
+    <svg {...base} className={className} aria-hidden>
+      <path d="M20.5 8.5A8.5 8.5 0 0 0 5.2 6.6" />
+      <path d="M3.5 15.5A8.5 8.5 0 0 0 18.8 17.4" />
+      <path d="M4.6 2.8v3.9h3.9" />
+      <path d="M19.4 21.2v-3.9h-3.9" />
+    </svg>
+  );
+}
+
 export function FlameIcon({ className }: Props) {
   return (
     <svg {...base} className={className} aria-hidden>

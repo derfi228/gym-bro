@@ -5,46 +5,70 @@ import type {
   MuscleId,
   MuscleLoad,
   StudySource,
+  TrainingSplit,
 } from "@shared/types";
 
 /**
- * Каталог упражнений. Цифры взяты из ЭМГ-исследований, а не придуманы.
- * Ссылки на первоисточники — в README проекта, в интерфейсе только подпись.
- *
- * Оговорка, которую нельзя терять: ЭМГ измеряет активацию в моменте,
- * а не прирост мышцы. Это помощь в выборе упражнения, не прогноз роста.
+ * Каталог упражнений и методик.
+ * Цифры взяты из ЭМГ-исследований, ссылки на первоисточники — в README.
+ * ЭМГ измеряет активацию в моменте и не предсказывает прирост мышцы.
  */
 
 export const sources: Record<string, StudySource> = {
   "ace-chest": {
     id: "ace-chest",
-    label: "ACE · ЭМГ, грудь",
+    label: "ACE, грудь",
     note: "ACE / Univ. of Wisconsin–La Crosse, 2012. % от жима штанги лёжа",
   },
   "ace-triceps": {
     id: "ace-triceps",
-    label: "ACE · ЭМГ, трицепс",
+    label: "ACE, трицепс",
     note: "ACE, 2011. % от алмазных отжиманий",
   },
   "ace-biceps": {
     id: "ace-biceps",
-    label: "ACE · рейтинг, бицепс",
-    note: "ACE, 2014. Опубликован порядок, без процентов",
+    label: "ACE, бицепс",
+    note: "ACE, 2014. Опубликован порядок из 8 упражнений",
   },
   "ace-delts": {
     id: "ace-delts",
-    label: "ACE · рейтинг, плечи",
-    note: "ACE, 2014. Опубликованы лидеры по пучкам, без процентов",
+    label: "ACE, плечи",
+    note: "ACE, 2014. Лидеры по трём пучкам дельты",
   },
   "ace-abs": {
     id: "ace-abs",
-    label: "ACE · рейтинг, пресс",
+    label: "ACE, пресс",
     note: "ACE / San Diego State Univ., 2001. Порядок из 13 упражнений",
+  },
+  "uwl-back": {
+    id: "uwl-back",
+    label: "UW–La Crosse, спина",
+    note: "Edelburg, UW–La Crosse. 8 упражнений на спину, ЭМГ широчайшей и трапеции",
+  },
+  "jospt-traps": {
+    id: "jospt-traps",
+    label: "JOSPT, трапеции",
+    note: "JOSPT, 2003. ЭМГ трапеции и передней зубчатой по пучкам",
+  },
+  "glutes-emg": {
+    id: "glutes-emg",
+    label: "Contreras, ягодицы",
+    note: "Contreras и др., 2015 (ЭМГ) + ACE. Ягодичный мост против приседа",
+  },
+  "hamstrings-emg": {
+    id: "hamstrings-emg",
+    label: "ЭМГ, бицепс бедра",
+    note: "Сравнения нордического сгибания, сгибаний лёжа и румынской тяги",
+  },
+  "calves-hyper": {
+    id: "calves-hyper",
+    label: "Kinoshita, икры",
+    note: "12-недельное сравнение подъёмов стоя и сидя по приросту объёма",
   },
   estimate: {
     id: "estimate",
     label: "Оценка",
-    note: "Сравнительного ЭМГ-исследования не нашли, значение экспертное",
+    note: "Сравнительного исследования не нашли, значение экспертное",
   },
 };
 
@@ -52,12 +76,15 @@ export const muscleNames: Record<MuscleId, string> = {
   traps: "Трапеции",
   delts: "Плечи",
   chest: "Грудь",
+  back: "Спина",
   biceps: "Бицепс",
   triceps: "Трицепс",
   forearms: "Предплечья",
   abs: "Пресс",
   obliques: "Косые",
+  glutes: "Ягодицы",
   quads: "Квадрицепс",
+  hamstrings: "Бицепс бедра",
   calves: "Икры",
 };
 
@@ -81,9 +108,10 @@ export const equipmentLabels = {
   cable: "Блок",
 } as const;
 
-/** Недельный объём: сделано подходов из целевого по росту/весу/возрасту */
+/** Недельный объём: сделано подходов из целевого */
 export const initialLoads: MuscleLoad[] = [
   { muscleId: "chest", setsDone: 12, setsTarget: 14, ratio: 12 / 14 },
+  { muscleId: "back", setsDone: 7, setsTarget: 16, ratio: 7 / 16 },
   { muscleId: "delts", setsDone: 9, setsTarget: 16, ratio: 9 / 16 },
   { muscleId: "biceps", setsDone: 8, setsTarget: 12, ratio: 8 / 12 },
   { muscleId: "triceps", setsDone: 5, setsTarget: 12, ratio: 5 / 12 },
@@ -91,29 +119,37 @@ export const initialLoads: MuscleLoad[] = [
   { muscleId: "forearms", setsDone: 3, setsTarget: 8, ratio: 3 / 8 },
   { muscleId: "abs", setsDone: 6, setsTarget: 12, ratio: 6 / 12 },
   { muscleId: "obliques", setsDone: 2, setsTarget: 8, ratio: 2 / 8 },
+  { muscleId: "glutes", setsDone: 5, setsTarget: 14, ratio: 5 / 14 },
   { muscleId: "quads", setsDone: 18, setsTarget: 16, ratio: 18 / 16 },
+  { muscleId: "hamstrings", setsDone: 2, setsTarget: 12, ratio: 2 / 12 },
   { muscleId: "calves", setsDone: 2, setsTarget: 10, ratio: 2 / 10 },
 ];
 
 export const demoExercises: Exercise[] = [
-  // ── Грудь: ACE 2012, проценты от жима штанги лёжа ──────────────────────
+  /* ── Грудь ─────────────────────────────────────────────────────────────── */
   {
     id: "bb-bench",
     name: "Жим штанги лёжа",
     primary: "chest",
     secondary: ["triceps", "delts"],
+    involvement: { chest: 1, triceps: 0.6, delts: 0.5 },
+    description:
+      "Лёжа на скамье, лопатки сведены и прижаты, стопы упёрты в пол. Штанга опускается к нижней части груди, локти идут под углом около 45° к корпусу, а не в стороны. В верхней точке локти не выключаются полностью.",
     emgPercent: 100,
     evidence: "emg",
     sourceId: "ace-chest",
     difficulty: "medium",
     equipment: "barbell",
-    note: "Эталон исследования — с ним сравнивали остальные",
+    note: "Эталон исследования — с ним сравнивали остальные упражнения",
   },
   {
     id: "pec-deck",
     name: "Пек-дек (бабочка)",
     primary: "chest",
     secondary: [],
+    involvement: { chest: 0.98, delts: 0.25 },
+    description:
+      "Спина прижата к спинке, локти чуть согнуты и зафиксированы. Сводите руки за счёт груди, а не за счёт кистей. В негативной фазе не уводите локти дальше линии плеч.",
     emgPercent: 98,
     evidence: "emg",
     sourceId: "ace-chest",
@@ -126,6 +162,9 @@ export const demoExercises: Exercise[] = [
     name: "Кроссовер в наклоне вперёд",
     primary: "chest",
     secondary: [],
+    involvement: { chest: 0.93, delts: 0.3, abs: 0.2 },
+    description:
+      "Шаг вперёд, корпус наклонён, руки идут по дуге вниз и внутрь до пересечения. Локти зафиксированы в лёгком сгибе весь подход.",
     emgPercent: 93,
     evidence: "emg",
     sourceId: "ace-chest",
@@ -138,6 +177,9 @@ export const demoExercises: Exercise[] = [
     name: "Жим в тренажёре",
     primary: "chest",
     secondary: ["triceps"],
+    involvement: { chest: 0.79, triceps: 0.45, delts: 0.35 },
+    description:
+      "Рукояти на уровне середины груди. Спина прижата, движение только руками. Хорош, когда нужно нагрузить грудь без страховки.",
     emgPercent: 79,
     evidence: "emg",
     sourceId: "ace-chest",
@@ -149,6 +191,9 @@ export const demoExercises: Exercise[] = [
     name: "Разведения на наклонной",
     primary: "chest",
     secondary: [],
+    involvement: { chest: 0.69, delts: 0.35 },
+    description:
+      "Скамья 30–45°, гантели опускаются по широкой дуге до уровня плеч. Локти согнуты и не меняют угол. Вес тут вторичен, важна амплитуда.",
     emgPercent: 69,
     evidence: "emg",
     sourceId: "ace-chest",
@@ -160,6 +205,9 @@ export const demoExercises: Exercise[] = [
     name: "Отжимания на брусьях",
     primary: "chest",
     secondary: ["triceps", "delts"],
+    involvement: { chest: 0.69, triceps: 0.75, delts: 0.4 },
+    description:
+      "Наклон корпуса вперёд смещает нагрузку на грудь, вертикальное положение — на трицепс. Опускайтесь до угла в локте около 90°, глубже только при здоровых плечах.",
     emgPercent: 69,
     evidence: "emg",
     sourceId: "ace-chest",
@@ -170,7 +218,10 @@ export const demoExercises: Exercise[] = [
     id: "push-up",
     name: "Отжимания от пола",
     primary: "chest",
-    secondary: ["triceps"],
+    secondary: ["triceps", "abs"],
+    involvement: { chest: 0.61, triceps: 0.55, delts: 0.35, abs: 0.3 },
+    description:
+      "Корпус прямой от пяток до макушки, ладони чуть шире плеч. Локти назад под 45°, а не в стороны.",
     emgPercent: 61,
     evidence: "emg",
     sourceId: "ace-chest",
@@ -178,12 +229,110 @@ export const demoExercises: Exercise[] = [
     equipment: "bodyweight",
   },
 
-  // ── Трицепс: ACE 2011, проценты от алмазных отжиманий ──────────────────
+  /* ── Спина ─────────────────────────────────────────────────────────────── */
+  {
+    id: "pull-up",
+    name: "Подтягивания",
+    primary: "back",
+    secondary: ["biceps", "forearms"],
+    involvement: { back: 1, biceps: 0.6, forearms: 0.5, traps: 0.35 },
+    description:
+      "Хват чуть шире плеч. Тянитесь грудью к перекладине, а не подбородком: плечи вниз и назад, лопатки сводятся в верхней точке. Внизу руки распрямляются полностью.",
+    emgPercent: null,
+    rank: 1,
+    evidence: "ranking",
+    sourceId: "uwl-back",
+    difficulty: "high",
+    equipment: "bodyweight",
+    note: "Наибольшая активация широчайшей из восьми проверенных упражнений",
+  },
+  {
+    id: "chin-up",
+    name: "Подтягивания обратным хватом",
+    primary: "back",
+    secondary: ["biceps", "forearms"],
+    involvement: { back: 0.95, biceps: 0.8, forearms: 0.5 },
+    description:
+      "Ладони к себе, хват на ширине плеч. Бицепс включается сильнее, чем при прямом хвате, поэтому упражнение засчитывается и в объём рук.",
+    emgPercent: null,
+    rank: 2,
+    evidence: "ranking",
+    sourceId: "uwl-back",
+    difficulty: "medium",
+    equipment: "bodyweight",
+  },
+  {
+    id: "bent-over-row",
+    name: "Тяга штанги в наклоне",
+    primary: "back",
+    secondary: ["biceps", "traps"],
+    involvement: { back: 0.85, biceps: 0.5, traps: 0.6, forearms: 0.4 },
+    description:
+      "Корпус наклонён примерно до 45°, спина прямая, колени мягкие. Штанга тянется к низу живота, локти скользят вдоль корпуса.",
+    emgPercent: null,
+    rank: 3,
+    evidence: "ranking",
+    sourceId: "uwl-back",
+    difficulty: "high",
+    equipment: "barbell",
+    note: "В группе лидеров по средней трапеции вместе с тягами сидя",
+  },
+  {
+    id: "lat-pulldown",
+    name: "Тяга верхнего блока",
+    primary: "back",
+    secondary: ["biceps"],
+    involvement: { back: 0.8, biceps: 0.55, forearms: 0.35 },
+    description:
+      "Рукоять к верху груди, корпус отклонён назад не больше чем на 15°. Начинайте движение с опускания плеч, а не со сгибания рук.",
+    emgPercent: null,
+    rank: 4,
+    evidence: "ranking",
+    sourceId: "uwl-back",
+    difficulty: "low",
+    equipment: "cable",
+    note: "Варианты хвата между собой по активации почти не различаются",
+  },
+  {
+    id: "seated-row",
+    name: "Тяга сидя к поясу",
+    primary: "back",
+    secondary: ["biceps", "traps"],
+    involvement: { back: 0.78, biceps: 0.5, traps: 0.6 },
+    description:
+      "Спина прямая, тяга к низу живота, лопатки сводятся в конце движения. Корпус не раскачивается.",
+    emgPercent: null,
+    rank: 5,
+    evidence: "ranking",
+    sourceId: "uwl-back",
+    difficulty: "low",
+    equipment: "cable",
+  },
+  {
+    id: "inverted-row",
+    name: "Австралийские подтягивания",
+    primary: "back",
+    secondary: ["biceps", "abs"],
+    involvement: { back: 0.72, biceps: 0.5, traps: 0.55, abs: 0.35 },
+    description:
+      "Тело прямое под грифом на уровне пояса, тяга грудью к перекладине. Чем горизонтальнее корпус, тем тяжелее.",
+    emgPercent: null,
+    rank: 6,
+    evidence: "ranking",
+    sourceId: "uwl-back",
+    difficulty: "low",
+    equipment: "bodyweight",
+  },
+
+  /* ── Трицепс ───────────────────────────────────────────────────────────── */
   {
     id: "triangle-push-up",
     name: "Алмазные отжимания",
     primary: "triceps",
     secondary: ["chest"],
+    involvement: { triceps: 1, chest: 0.55, delts: 0.3, abs: 0.25 },
+    description:
+      "Ладони под грудью, большие и указательные пальцы образуют треугольник. Локти прижаты к корпусу. Корпус прямой, таз не проваливается.",
     emgPercent: 100,
     evidence: "emg",
     sourceId: "ace-triceps",
@@ -196,6 +345,9 @@ export const demoExercises: Exercise[] = [
     name: "Разгибания в наклоне",
     primary: "triceps",
     secondary: [],
+    involvement: { triceps: 0.87, delts: 0.2 },
+    description:
+      "Корпус в наклоне, плечо прижато к боку и неподвижно. Работает только предплечье: разгибание до прямой руки, пауза в верхней точке.",
     emgPercent: 87,
     evidence: "emg",
     sourceId: "ace-triceps",
@@ -204,9 +356,12 @@ export const demoExercises: Exercise[] = [
   },
   {
     id: "dips-triceps",
-    name: "Отжимания на брусьях узко",
+    name: "Брусья узким хватом",
     primary: "triceps",
     secondary: ["chest"],
+    involvement: { triceps: 0.87, chest: 0.5, delts: 0.35 },
+    description:
+      "Корпус держится вертикально, локти прижаты и идут строго назад. Наклон вперёд переводит нагрузку на грудь.",
     emgPercent: 87,
     evidence: "emg",
     sourceId: "ace-triceps",
@@ -218,6 +373,9 @@ export const demoExercises: Exercise[] = [
     name: "Разгибания из-за головы",
     primary: "triceps",
     secondary: [],
+    involvement: { triceps: 0.76, delts: 0.2, abs: 0.2 },
+    description:
+      "Локти смотрят вверх и не разъезжаются. Гантель опускается за голову до растяжения, затем руки распрямляются. Длинная головка трицепса работает в растянутом положении.",
     emgPercent: 76,
     evidence: "emg",
     sourceId: "ace-triceps",
@@ -229,6 +387,9 @@ export const demoExercises: Exercise[] = [
     name: "Разгибания на блоке с канатом",
     primary: "triceps",
     secondary: [],
+    involvement: { triceps: 0.74 },
+    description:
+      "Локти прижаты к корпусу, в нижней точке канат разводится в стороны. Корпус не помогает наклоном.",
     emgPercent: 74,
     evidence: "emg",
     sourceId: "ace-triceps",
@@ -240,6 +401,9 @@ export const demoExercises: Exercise[] = [
     name: "Разгибания на блоке с рукоятью",
     primary: "triceps",
     secondary: [],
+    involvement: { triceps: 0.67 },
+    description:
+      "То же движение с прямой рукоятью. Кисти жёстко зафиксированы, плечи неподвижны.",
     emgPercent: 67,
     evidence: "emg",
     sourceId: "ace-triceps",
@@ -251,6 +415,9 @@ export const demoExercises: Exercise[] = [
     name: "Французский жим лёжа",
     primary: "triceps",
     secondary: [],
+    involvement: { triceps: 0.62 },
+    description:
+      "Лёжа, гриф опускается ко лбу или за голову, плечи стоят неподвижно под небольшим наклоном назад. Нагрузка на локти высокая — вес умеренный.",
     emgPercent: 62,
     evidence: "emg",
     sourceId: "ace-triceps",
@@ -262,33 +429,42 @@ export const demoExercises: Exercise[] = [
     name: "Жим узким хватом",
     primary: "triceps",
     secondary: ["chest", "delts"],
+    involvement: { triceps: 0.62, chest: 0.6, delts: 0.4 },
+    description:
+      "Хват на ширине плеч, локти вдоль корпуса. Гриф опускается к низу груди.",
     emgPercent: 62,
     evidence: "emg",
     sourceId: "ace-triceps",
     difficulty: "medium",
     equipment: "barbell",
-    note: "В исследовании ниже отжиманий: в свободных весах включается инерция",
+    note: "Ниже отжиманий: в свободных весах подключается инерция",
   },
 
-  // ── Бицепс: ACE 2014, только порядок ───────────────────────────────────
+  /* ── Бицепс ────────────────────────────────────────────────────────────── */
   {
     id: "concentration-curl",
     name: "Концентрированные сгибания",
     primary: "biceps",
     secondary: [],
+    involvement: { biceps: 1, forearms: 0.4 },
+    description:
+      "Сидя, локоть упирается во внутреннюю часть бедра и не двигается. Подъём до полного сокращения, опускание медленное.",
     emgPercent: null,
     rank: 1,
     evidence: "ranking",
     sourceId: "ace-biceps",
     difficulty: "low",
     equipment: "dumbbell",
-    note: "Локоть зафиксирован — корпус не помогает, работает только бицепс",
+    note: "Корпус не помогает, поэтому активация выше остальных вариантов",
   },
   {
     id: "bb-curl",
     name: "Подъём штанги на бицепс",
     primary: "biceps",
     secondary: ["forearms"],
+    involvement: { biceps: 0.9, forearms: 0.5, delts: 0.2 },
+    description:
+      "Стоя, локти прижаты к бокам. Подъём без раскачки корпусом, опускание до полного выпрямления рук.",
     emgPercent: null,
     rank: 2,
     evidence: "ranking",
@@ -301,6 +477,9 @@ export const demoExercises: Exercise[] = [
     name: "Сгибания на блоке",
     primary: "biceps",
     secondary: ["forearms"],
+    involvement: { biceps: 0.85, forearms: 0.45 },
+    description:
+      "Нагрузка равномерная по всей амплитуде, в отличие от штанги. Локти зафиксированы у корпуса.",
     emgPercent: null,
     rank: 3,
     evidence: "ranking",
@@ -309,34 +488,13 @@ export const demoExercises: Exercise[] = [
     equipment: "cable",
   },
   {
-    id: "chin-up",
-    name: "Подтягивания обратным хватом",
-    primary: "biceps",
-    secondary: ["forearms"],
-    emgPercent: null,
-    rank: 4,
-    evidence: "ranking",
-    sourceId: "ace-biceps",
-    difficulty: "medium",
-    equipment: "bodyweight",
-  },
-  {
-    id: "ez-curl-narrow",
-    name: "EZ-гриф узким хватом",
-    primary: "biceps",
-    secondary: ["forearms"],
-    emgPercent: null,
-    rank: 5,
-    evidence: "ranking",
-    sourceId: "ace-biceps",
-    difficulty: "low",
-    equipment: "barbell",
-  },
-  {
     id: "incline-curl",
     name: "Сгибания на наклонной",
     primary: "biceps",
     secondary: [],
+    involvement: { biceps: 0.75, forearms: 0.35 },
+    description:
+      "Скамья под 45–60°, руки свободно свисают за линией корпуса. Бицепс работает в растянутом положении.",
     emgPercent: null,
     rank: 7,
     evidence: "ranking",
@@ -349,6 +507,9 @@ export const demoExercises: Exercise[] = [
     name: "Скамья Скотта",
     primary: "biceps",
     secondary: [],
+    involvement: { biceps: 0.72, forearms: 0.35 },
+    description:
+      "Плечи лежат на наклонной подушке. Полностью выпрямлять руки внизу под весом не стоит — нагрузка на локтевой сустав.",
     emgPercent: null,
     rank: 8,
     evidence: "ranking",
@@ -357,25 +518,31 @@ export const demoExercises: Exercise[] = [
     equipment: "dumbbell",
   },
 
-  // ── Плечи: ACE 2014, только лидеры по пучкам ───────────────────────────
+  /* ── Плечи ─────────────────────────────────────────────────────────────── */
   {
     id: "db-shoulder-press",
     name: "Жим гантелей сидя",
     primary: "delts",
     secondary: ["triceps", "traps"],
+    involvement: { delts: 1, triceps: 0.55, traps: 0.4 },
+    description:
+      "Спина прижата к спинке, гантели идут от уровня ушей вверх. В верхней точке не сводите гантели вместе — нагрузка уходит.",
     emgPercent: null,
     rank: 1,
     evidence: "ranking",
     sourceId: "ace-delts",
     difficulty: "medium",
     equipment: "dumbbell",
-    note: "Лидер по переднему пучку",
+    note: "Лидер по переднему пучку дельты",
   },
   {
     id: "incline-row-45",
     name: "Тяга на наклонной 45°",
     primary: "delts",
-    secondary: ["traps", "biceps"],
+    secondary: ["traps", "back"],
+    involvement: { delts: 0.9, traps: 0.7, back: 0.6, biceps: 0.4 },
+    description:
+      "Лёжа грудью на наклонной скамье, тяга гантелей к поясу с разведением локтей. Корпус зафиксирован скамьёй.",
     emgPercent: null,
     rank: 2,
     evidence: "ranking",
@@ -389,6 +556,9 @@ export const demoExercises: Exercise[] = [
     name: "Махи в стороны с согнутой рукой",
     primary: "delts",
     secondary: [],
+    involvement: { delts: 0.88, traps: 0.35 },
+    description:
+      "Локти согнуты под 90°, подъём до уровня плеч. Согнутая рука укорачивает рычаг — можно взять вес больше, чем в классических махах.",
     emgPercent: null,
     rank: 3,
     evidence: "ranking",
@@ -402,6 +572,9 @@ export const demoExercises: Exercise[] = [
     name: "Махи в наклоне сидя",
     primary: "delts",
     secondary: ["traps"],
+    involvement: { delts: 0.85, traps: 0.5, back: 0.3 },
+    description:
+      "Сидя, корпус наклонён к бёдрам. Руки разводятся в стороны, лопатки почти не сводятся — иначе работу забирает трапеция.",
     emgPercent: null,
     rank: 4,
     evidence: "ranking",
@@ -415,6 +588,9 @@ export const demoExercises: Exercise[] = [
     name: "Подъёмы перед собой",
     primary: "delts",
     secondary: [],
+    involvement: { delts: 0.65, traps: 0.3 },
+    description:
+      "Подъём прямых рук перед собой до уровня плеч. Передний пучок и так много работает в жимах, поэтому упражнение вспомогательное.",
     emgPercent: null,
     rank: 6,
     evidence: "ranking",
@@ -423,12 +599,79 @@ export const demoExercises: Exercise[] = [
     equipment: "dumbbell",
   },
 
-  // ── Пресс: ACE 2001, порядок из 13 упражнений ──────────────────────────
+  /* ── Трапеции ──────────────────────────────────────────────────────────── */
+  {
+    id: "db-shrug",
+    name: "Шраги с гантелями",
+    primary: "traps",
+    secondary: ["forearms"],
+    involvement: { traps: 1, forearms: 0.5 },
+    description:
+      "Плечи поднимаются строго вверх, без вращения. Пауза в верхней точке, руки не сгибаются.",
+    emgPercent: null,
+    rank: 1,
+    evidence: "ranking",
+    sourceId: "jospt-traps",
+    difficulty: "low",
+    equipment: "dumbbell",
+    note: "Наибольшая активация верхнего пучка трапеции",
+  },
+  {
+    id: "prone-y-raise",
+    name: "Y-подъёмы лёжа на животе",
+    primary: "traps",
+    secondary: ["delts"],
+    involvement: { traps: 0.9, delts: 0.5, back: 0.4 },
+    description:
+      "Лёжа на животе или наклонной скамье, руки поднимаются вверх буквой Y, большие пальцы смотрят в потолок. Работает нижняя трапеция, которая обычно отстаёт.",
+    emgPercent: null,
+    rank: 2,
+    evidence: "ranking",
+    sourceId: "jospt-traps",
+    difficulty: "low",
+    equipment: "dumbbell",
+    note: "Лучшая нагрузка на нижний пучок трапеции",
+  },
+  {
+    id: "bb-shrug",
+    name: "Шраги со штангой",
+    primary: "traps",
+    secondary: ["forearms"],
+    involvement: { traps: 0.95, forearms: 0.55 },
+    description:
+      "То же движение со штангой перед собой. Вес обычно больше, но амплитуда чуть короче из-за грифа.",
+    emgPercent: null,
+    rank: 3,
+    evidence: "ranking",
+    sourceId: "jospt-traps",
+    difficulty: "low",
+    equipment: "barbell",
+  },
+  {
+    id: "upright-row",
+    name: "Тяга к подбородку",
+    primary: "traps",
+    secondary: ["delts"],
+    involvement: { traps: 0.7, delts: 0.6, biceps: 0.3 },
+    description:
+      "Тяга вдоль корпуса до уровня груди, локти выше кистей. Узкий хват и подъём выше плеч зажимают плечевой сустав.",
+    emgPercent: null,
+    rank: 4,
+    evidence: "ranking",
+    sourceId: "jospt-traps",
+    difficulty: "medium",
+    equipment: "barbell",
+  },
+
+  /* ── Пресс ─────────────────────────────────────────────────────────────── */
   {
     id: "bicycle-crunch",
     name: "Велосипед",
     primary: "abs",
     secondary: ["obliques"],
+    involvement: { abs: 1, obliques: 0.85 },
+    description:
+      "Лёжа, поочерёдно тянитесь локтем к противоположному колену, вторая нога выпрямляется. Поясница прижата к полу, движение медленное.",
     emgPercent: null,
     rank: 1,
     evidence: "ranking",
@@ -442,6 +685,9 @@ export const demoExercises: Exercise[] = [
     name: "Подъём ног в упоре",
     primary: "abs",
     secondary: ["obliques"],
+    involvement: { abs: 0.92, obliques: 0.6, forearms: 0.3 },
+    description:
+      "В упоре на локтях подъём коленей к груди со скручиванием таза. Без раскачки: поднимаетесь прессом, а не инерцией.",
     emgPercent: null,
     rank: 2,
     evidence: "ranking",
@@ -454,6 +700,9 @@ export const demoExercises: Exercise[] = [
     name: "Скручивания на фитболе",
     primary: "abs",
     secondary: [],
+    involvement: { abs: 0.85, obliques: 0.35 },
+    description:
+      "Поясница на мяче, амплитуда больше, чем на полу: корпус сначала прогибается назад, затем скручивается.",
     emgPercent: null,
     rank: 3,
     evidence: "ranking",
@@ -462,22 +711,29 @@ export const demoExercises: Exercise[] = [
     equipment: "bodyweight",
   },
   {
-    id: "vertical-leg-crunch",
-    name: "Скручивания с поднятыми ногами",
+    id: "cable-crunch",
+    name: "Скручивания на блоке",
     primary: "abs",
-    secondary: [],
+    secondary: ["obliques"],
+    involvement: { abs: 0.8, obliques: 0.4 },
+    description:
+      "Стоя на коленях у блока, скручивание корпуса вниз за счёт пресса. Таз неподвижен, тянут не руки, а живот.",
     emgPercent: null,
-    rank: 4,
+    rank: 5,
     evidence: "ranking",
     sourceId: "ace-abs",
     difficulty: "low",
-    equipment: "bodyweight",
+    equipment: "cable",
+    note: "Единственный вариант, где прессу можно осмысленно добавлять вес",
   },
   {
     id: "reverse-crunch",
     name: "Обратные скручивания",
     primary: "abs",
     secondary: ["obliques"],
+    involvement: { abs: 0.75, obliques: 0.4 },
+    description:
+      "Лёжа, колени подтягиваются к груди с отрывом таза от пола. Ноги не раскачиваются.",
     emgPercent: null,
     rank: 7,
     evidence: "ranking",
@@ -486,141 +742,314 @@ export const demoExercises: Exercise[] = [
     equipment: "bodyweight",
   },
   {
-    id: "plank-weighted",
+    id: "plank",
     name: "Планка",
     primary: "abs",
     secondary: ["obliques"],
+    involvement: { abs: 0.55, obliques: 0.45, delts: 0.2 },
+    description:
+      "Упор на локтях, тело прямой линией. Таз не проваливается и не задирается, ягодицы и пресс напряжены.",
     emgPercent: null,
     rank: 10,
     evidence: "ranking",
     sourceId: "ace-abs",
     difficulty: "low",
     equipment: "bodyweight",
-    note: "В рейтинге ниже скручиваний — держит корпус, но мало нагружает",
-  },
-  {
-    id: "crunch",
-    name: "Обычные скручивания",
-    primary: "abs",
-    secondary: [],
-    emgPercent: null,
-    rank: 11,
-    evidence: "ranking",
-    sourceId: "ace-abs",
-    difficulty: "low",
-    equipment: "bodyweight",
+    note: "В рейтинге ниже скручиваний: держит корпус, но мало нагружает",
   },
 
-  // ── Ниже — без сравнительного ЭМГ-исследования ─────────────────────────
-  {
-    id: "cable-woodchop",
-    name: "Дровосек на блоке",
-    primary: "obliques",
-    secondary: ["abs"],
-    emgPercent: 84,
-    evidence: "estimate",
-    sourceId: "estimate",
-    difficulty: "medium",
-    equipment: "cable",
-  },
+  /* ── Косые ─────────────────────────────────────────────────────────────── */
   {
     id: "side-plank",
     name: "Боковая планка",
     primary: "obliques",
     secondary: ["abs"],
-    emgPercent: 78,
-    evidence: "estimate",
+    involvement: { obliques: 1, abs: 0.5, delts: 0.3, glutes: 0.3 },
+    description:
+      "Упор на один локоть, тело прямой линией сбоку. Таз не провисает. Подъём ног на возвышение усложняет вариант.",
+    emgPercent: null,
+    rank: 1,
+    evidence: "ranking",
     sourceId: "estimate",
     difficulty: "medium",
     equipment: "bodyweight",
+    note: "Даёт заметно больше косым, чем обычная планка и скручивания",
   },
   {
-    id: "db-side-bend",
-    name: "Наклоны с гантелей",
+    id: "pallof-press",
+    name: "Жим Палоффа",
     primary: "obliques",
-    secondary: [],
-    emgPercent: 70,
-    evidence: "estimate",
+    secondary: ["abs"],
+    involvement: { obliques: 0.92, abs: 0.6, delts: 0.25 },
+    description:
+      "Стоя боком к блоку, руки выжимаются от груди вперёд. Задача — не дать корпусу провернуться. Работа на сопротивление вращению.",
+    emgPercent: null,
+    rank: 2,
+    evidence: "ranking",
     sourceId: "estimate",
-    difficulty: "low",
+    difficulty: "medium",
+    equipment: "cable",
+    note: "Антиротация нагружает косые не меньше скручиваний с поворотом",
+  },
+  {
+    id: "cable-woodchop",
+    name: "Дровосек на блоке",
+    primary: "obliques",
+    secondary: ["abs"],
+    involvement: { obliques: 0.88, abs: 0.55, delts: 0.3 },
+    description:
+      "Движение по диагонали сверху вниз с поворотом корпуса. Руки прямые, вращение идёт от туловища, а не от плеч.",
+    emgPercent: null,
+    rank: 3,
+    evidence: "ranking",
+    sourceId: "estimate",
+    difficulty: "medium",
+    equipment: "cable",
+  },
+
+  /* ── Ягодицы ───────────────────────────────────────────────────────────── */
+  {
+    id: "hip-thrust",
+    name: "Ягодичный мост со штангой",
+    primary: "glutes",
+    secondary: ["hamstrings"],
+    involvement: { glutes: 1, hamstrings: 0.7, quads: 0.3, abs: 0.3 },
+    description:
+      "Лопатки на скамье, штанга на тазу. Подъём до линии корпус-бёдра, подбородок прижат. В верхней точке пауза с сжатыми ягодицами.",
+    emgPercent: null,
+    rank: 1,
+    evidence: "ranking",
+    sourceId: "glutes-emg",
+    difficulty: "medium",
+    equipment: "barbell",
+    note: "По ЭМГ выше приседа, но по приросту массы разница небольшая",
+  },
+  {
+    id: "back-squat-glutes",
+    name: "Приседания со штангой",
+    primary: "glutes",
+    secondary: ["quads", "hamstrings"],
+    involvement: {
+      glutes: 0.85,
+      quads: 1,
+      hamstrings: 0.5,
+      abs: 0.4,
+      calves: 0.3,
+      back: 0.35,
+    },
+    description:
+      "Штанга на трапециях, таз уходит назад и вниз, колени идут по линии стоп. Глубина ниже параллели включает ягодицы сильнее.",
+    emgPercent: null,
+    rank: 2,
+    evidence: "ranking",
+    sourceId: "glutes-emg",
+    difficulty: "high",
+    equipment: "barbell",
+    note: "По приросту ягодичных сопоставим с ягодичным мостом",
+  },
+  {
+    id: "bulgarian-split-squat",
+    name: "Болгарский присед",
+    primary: "glutes",
+    secondary: ["quads", "hamstrings"],
+    involvement: { glutes: 0.8, quads: 0.8, hamstrings: 0.45, abs: 0.35 },
+    description:
+      "Задняя нога на скамье, вес на передней. Наклон корпуса вперёд смещает нагрузку на ягодицу, вертикальный корпус — на квадрицепс.",
+    emgPercent: null,
+    rank: 3,
+    evidence: "ranking",
+    sourceId: "glutes-emg",
+    difficulty: "medium",
     equipment: "dumbbell",
   },
   {
+    id: "step-up",
+    name: "Зашагивания на платформу",
+    primary: "glutes",
+    secondary: ["quads"],
+    involvement: { glutes: 0.72, quads: 0.7, hamstrings: 0.35, calves: 0.3 },
+    description:
+      "Полностью выпрямляйте ногу на платформе, не отталкиваясь второй. Высота платформы — до уровня колена.",
+    emgPercent: null,
+    rank: 4,
+    evidence: "ranking",
+    sourceId: "glutes-emg",
+    difficulty: "low",
+    equipment: "dumbbell",
+    note: "В исследовании ACE — рабочая замена приседу по активации",
+  },
+
+  /* ── Квадрицепс ────────────────────────────────────────────────────────── */
+  {
     id: "back-squat",
-    name: "Приседания со штангой",
+    name: "Присед со штангой на спине",
     primary: "quads",
-    secondary: ["abs", "calves"],
-    emgPercent: 95,
-    evidence: "estimate",
+    secondary: ["glutes", "abs"],
+    involvement: {
+      quads: 1,
+      glutes: 0.8,
+      hamstrings: 0.45,
+      abs: 0.45,
+      back: 0.4,
+      calves: 0.3,
+    },
+    description:
+      "Гриф на верху трапеций, стопы чуть шире таза. Спина нейтральная, таз и грудь поднимаются одновременно.",
+    emgPercent: null,
+    rank: 1,
+    evidence: "ranking",
     sourceId: "estimate",
     difficulty: "high",
     equipment: "barbell",
-    note: "По активации квадрицепса сопоставим с жимом ногами, но нагружает спину",
+    note: "По активации квадрицепса сопоставим с жимом ногами, но грузит спину",
   },
   {
     id: "leg-press",
     name: "Жим ногами",
     primary: "quads",
-    secondary: ["calves"],
-    emgPercent: 93,
-    evidence: "estimate",
+    secondary: ["glutes"],
+    involvement: { quads: 0.95, glutes: 0.6, hamstrings: 0.3, calves: 0.25 },
+    description:
+      "Стопы на платформе на ширине таза. Колени опускаются к груди, поясница прижата к спинке. Внизу таз не подворачивается.",
+    emgPercent: null,
+    rank: 2,
+    evidence: "ranking",
     sourceId: "estimate",
     difficulty: "low",
     equipment: "machine",
-    note: "Разница с приседом не в активации мышцы, а в нагрузке на суставы",
+    note: "Разница с приседом не в активации мышцы, а в нагрузке на позвоночник",
   },
   {
-    id: "smith-squat",
-    name: "Приседания в Смите",
+    id: "front-squat",
+    name: "Фронтальный присед",
     primary: "quads",
-    secondary: [],
-    emgPercent: 82,
-    evidence: "estimate",
+    secondary: ["abs"],
+    involvement: { quads: 0.92, glutes: 0.6, abs: 0.6, back: 0.45 },
+    description:
+      "Гриф лежит на передних дельтах, локти высоко. Корпус вертикальнее, чем в обычном приседе — квадрицепс работает больше, спина меньше.",
+    emgPercent: null,
+    rank: 3,
+    evidence: "ranking",
     sourceId: "estimate",
-    difficulty: "medium",
-    equipment: "machine",
-  },
-  {
-    id: "db-lunge",
-    name: "Выпады с гантелями",
-    primary: "quads",
-    secondary: ["calves", "abs"],
-    emgPercent: 78,
-    evidence: "estimate",
-    sourceId: "estimate",
-    difficulty: "medium",
-    equipment: "dumbbell",
+    difficulty: "high",
+    equipment: "barbell",
   },
   {
     id: "leg-extension",
     name: "Разгибания ног",
     primary: "quads",
     secondary: [],
-    emgPercent: 74,
-    evidence: "estimate",
+    involvement: { quads: 0.75 },
+    description:
+      "Изолированное разгибание в колене. Спина прижата, в верхней точке короткая пауза. Хорошо добивает квадрицепс после базы.",
+    emgPercent: null,
+    rank: 4,
+    evidence: "ranking",
     sourceId: "estimate",
     difficulty: "low",
     equipment: "machine",
   },
+
+  /* ── Бицепс бедра ──────────────────────────────────────────────────────── */
+  {
+    id: "nordic-curl",
+    name: "Нордическое сгибание",
+    primary: "hamstrings",
+    secondary: ["glutes"],
+    involvement: { hamstrings: 1, glutes: 0.45, calves: 0.3 },
+    description:
+      "Голени зафиксированы, корпус медленно опускается вперёд за счёт удержания бицепсом бедра. Одно из самых тяжёлых упражнений — начинайте с частичной амплитуды.",
+    emgPercent: null,
+    rank: 1,
+    evidence: "ranking",
+    sourceId: "hamstrings-emg",
+    difficulty: "high",
+    equipment: "bodyweight",
+    note: "Сильнее всего грузит длинную головку бицепса бедра",
+  },
+  {
+    id: "leg-curl",
+    name: "Сгибания ног лёжа",
+    primary: "hamstrings",
+    secondary: ["calves"],
+    involvement: { hamstrings: 0.95, calves: 0.35 },
+    description:
+      "Сгибание в колене против сопротивления. Таз прижат к скамье, движение без рывков.",
+    emgPercent: null,
+    rank: 2,
+    evidence: "ranking",
+    sourceId: "hamstrings-emg",
+    difficulty: "low",
+    equipment: "machine",
+    note: "В ЭМГ-сравнениях даёт самый сильный отклик бицепса бедра",
+  },
+  {
+    id: "romanian-deadlift",
+    name: "Румынская тяга",
+    primary: "hamstrings",
+    secondary: ["glutes", "back"],
+    involvement: {
+      hamstrings: 0.85,
+      glutes: 0.75,
+      back: 0.55,
+      forearms: 0.4,
+      traps: 0.35,
+    },
+    description:
+      "Ноги почти прямые, таз уходит назад, штанга скользит вдоль бёдер. Спина нейтральная всё движение. Опускайтесь до ощущения растяжения, не ниже.",
+    emgPercent: null,
+    rank: 3,
+    evidence: "ranking",
+    sourceId: "hamstrings-emg",
+    difficulty: "high",
+    equipment: "barbell",
+    note: "Нагружает верх бицепса бедра сильнее, чем сгибания лёжа",
+  },
+  {
+    id: "good-morning",
+    name: "Наклоны со штангой",
+    primary: "hamstrings",
+    secondary: ["glutes", "back"],
+    involvement: { hamstrings: 0.75, glutes: 0.6, back: 0.6, abs: 0.3 },
+    description:
+      "Штанга на спине, наклон корпуса вперёд с отведением таза. Вес небольшой — движение требует контроля поясницы.",
+    emgPercent: null,
+    rank: 4,
+    evidence: "ranking",
+    sourceId: "hamstrings-emg",
+    difficulty: "high",
+    equipment: "barbell",
+  },
+
+  /* ── Икры ──────────────────────────────────────────────────────────────── */
   {
     id: "standing-calf-raise",
     name: "Подъёмы на носки стоя",
     primary: "calves",
     secondary: [],
-    emgPercent: 90,
-    evidence: "estimate",
-    sourceId: "estimate",
+    involvement: { calves: 1 },
+    description:
+      "Колени прямые, подъём на максимальную высоту и опускание ниже уровня платформы. Прямое колено включает икроножную мышцу.",
+    emgPercent: null,
+    rank: 1,
+    evidence: "ranking",
+    sourceId: "calves-hyper",
     difficulty: "low",
     equipment: "machine",
+    note: "За 12 недель дал прирост икроножной в разы больше, чем сидя",
   },
   {
     id: "leg-press-calf",
     name: "Носки в жиме ногами",
     primary: "calves",
     secondary: [],
-    emgPercent: 84,
-    evidence: "estimate",
-    sourceId: "estimate",
+    involvement: { calves: 0.9 },
+    description:
+      "Стопы на нижнем крае платформы, ноги почти прямые. Работают только голеностопы, колени не сгибаются.",
+    emgPercent: null,
+    rank: 2,
+    evidence: "ranking",
+    sourceId: "calves-hyper",
     difficulty: "low",
     equipment: "machine",
   },
@@ -629,52 +1058,29 @@ export const demoExercises: Exercise[] = [
     name: "Подъёмы на носки сидя",
     primary: "calves",
     secondary: [],
-    emgPercent: 78,
-    evidence: "estimate",
-    sourceId: "estimate",
+    involvement: { calves: 0.75 },
+    description:
+      "Колени согнуты под 90°. В таком положении икроножная выключается и работает камбаловидная мышца под ней.",
+    emgPercent: null,
+    rank: 3,
+    evidence: "ranking",
+    sourceId: "calves-hyper",
     difficulty: "low",
     equipment: "machine",
-    note: "Камбаловидная — работает при согнутом колене",
+    note: "Для икроножной хуже, но камбаловидную иначе не нагрузить",
   },
-  {
-    id: "db-shrug",
-    name: "Шраги с гантелями",
-    primary: "traps",
-    secondary: ["forearms"],
-    emgPercent: 88,
-    evidence: "estimate",
-    sourceId: "estimate",
-    difficulty: "low",
-    equipment: "dumbbell",
-  },
-  {
-    id: "bb-shrug",
-    name: "Шраги со штангой",
-    primary: "traps",
-    secondary: ["forearms"],
-    emgPercent: 85,
-    evidence: "estimate",
-    sourceId: "estimate",
-    difficulty: "low",
-    equipment: "barbell",
-  },
-  {
-    id: "upright-row",
-    name: "Тяга к подбородку",
-    primary: "traps",
-    secondary: ["delts"],
-    emgPercent: 70,
-    evidence: "estimate",
-    sourceId: "estimate",
-    difficulty: "medium",
-    equipment: "barbell",
-  },
+
+  /* ── Предплечья ────────────────────────────────────────────────────────── */
   {
     id: "farmers-walk",
     name: "Фермерская прогулка",
     primary: "forearms",
     secondary: ["traps", "abs"],
-    emgPercent: 86,
+    involvement: { forearms: 1, traps: 0.6, abs: 0.4, calves: 0.3 },
+    description:
+      "Тяжёлые гантели в руках, ходьба с прямой спиной и опущенными плечами. Работает хват и весь корпус.",
+    emgPercent: null,
+    rank: 1,
     evidence: "estimate",
     sourceId: "estimate",
     difficulty: "low",
@@ -685,7 +1091,11 @@ export const demoExercises: Exercise[] = [
     name: "Сгибания в запястьях",
     primary: "forearms",
     secondary: [],
-    emgPercent: 82,
+    involvement: { forearms: 0.85 },
+    description:
+      "Предплечья лежат на скамье, движение только в кистях. Полная амплитуда с опусканием грифа на пальцы.",
+    emgPercent: null,
+    rank: 2,
     evidence: "estimate",
     sourceId: "estimate",
     difficulty: "low",
@@ -696,7 +1106,11 @@ export const demoExercises: Exercise[] = [
     name: "Обратные сгибания",
     primary: "forearms",
     secondary: ["biceps"],
-    emgPercent: 74,
+    involvement: { forearms: 0.8, biceps: 0.55 },
+    description:
+      "Хват сверху, подъём на бицепс. Нагружает плечелучевую мышцу — она даёт толщину предплечья со стороны большого пальца.",
+    emgPercent: null,
+    rank: 3,
     evidence: "estimate",
     sourceId: "estimate",
     difficulty: "low",
@@ -704,13 +1118,97 @@ export const demoExercises: Exercise[] = [
   },
 ];
 
+/* ── Известные методики ───────────────────────────────────────────────────── */
+
+export const splits: TrainingSplit[] = [
+  {
+    id: "full-body",
+    name: "Фулбоди 3 раза в неделю",
+    frequencyPerWeek: 3,
+    daysPerWeek: 3,
+    weeklySetsPerMuscle: "9–15",
+    repRange: "6–12",
+    level: "novice",
+    evidenceScore: 95,
+    evidenceNote:
+      "Частота 3 раза в неделю на группу. В прямом сравнении с трёхдневным сплитом при равном объёме фулбоди дал не меньший, а по части групп больший прирост.",
+    sourceId: "frequency",
+  },
+  {
+    id: "upper-lower",
+    name: "Верх / низ, 4 дня",
+    frequencyPerWeek: 2,
+    daysPerWeek: 4,
+    weeklySetsPerMuscle: "12–18",
+    repRange: "6–12",
+    level: "intermediate",
+    evidenceScore: 92,
+    evidenceNote:
+      "Каждая группа дважды в неделю — это тот минимум частоты, который в мета-анализах стабильно обходит однократную нагрузку.",
+    sourceId: "frequency",
+  },
+  {
+    id: "ppl",
+    name: "Тяни-толкай-ноги (PPL)",
+    frequencyPerWeek: 2,
+    daysPerWeek: 6,
+    weeklySetsPerMuscle: "14–20",
+    repRange: "6–12",
+    level: "intermediate",
+    evidenceScore: 88,
+    evidenceNote:
+      "На шести днях каждая группа получает нагрузку дважды в неделю и большой объём. На трёх днях частота падает до одного раза и результат хуже.",
+    sourceId: "frequency",
+  },
+  {
+    id: "gvt",
+    name: "Немецкий объёмный тренинг (10×10)",
+    frequencyPerWeek: 1,
+    daysPerWeek: 5,
+    weeklySetsPerMuscle: "10 на упражнение",
+    repRange: "10",
+    level: "advanced",
+    evidenceScore: 55,
+    evidenceNote:
+      "Прямое сравнение показало: 5 подходов дали не меньше массы и силы, чем 10. Свыше 5 подходов на упражнение прибавки не дают, а усталость растёт.",
+    sourceId: "gvt",
+  },
+  {
+    id: "bro-split",
+    name: "Сплит по группам, 5 дней",
+    frequencyPerWeek: 1,
+    daysPerWeek: 5,
+    weeklySetsPerMuscle: "12–20",
+    repRange: "8–12",
+    level: "intermediate",
+    evidenceScore: 60,
+    evidenceNote:
+      "Каждая группа раз в неделю. При равном недельном объёме разница с частыми схемами невелика, но набрать объём за одну сессию тяжелее.",
+    sourceId: "frequency",
+  },
+  {
+    id: "max-ot",
+    name: "Max-OT",
+    frequencyPerWeek: 1,
+    daysPerWeek: 5,
+    weeklySetsPerMuscle: "6–9",
+    repRange: "4–6",
+    level: "advanced",
+    evidenceScore: 45,
+    evidenceNote:
+      "Малое число повторов, 2–3 минуты отдыха, каждая группа раз в неделю. Рецензируемых исследований именно этой методики на прирост мышц нет; автор — владелец компании спортпита.",
+    sourceId: "max-ot",
+  },
+];
+
+/* ── Хелперы ──────────────────────────────────────────────────────────────── */
+
 /** Позиция в списке: сперва проценты, затем ранги. Чем меньше — тем выше. */
 export function orderKey(e: Exercise): number {
   if (e.emgPercent !== null) return 100 - e.emgPercent;
   return 100 + (e.rank ?? 99);
 }
 
-/** Упражнения для мышцы — от самого доказанного и активного к остальным */
 export function exercisesFor(muscleId: MuscleId): Exercise[] {
   return demoExercises
     .filter((e) => e.primary === muscleId)
@@ -725,7 +1223,7 @@ export function exerciseById(id: string): Exercise {
   return found;
 }
 
-/** Подпись значения для карточки: «100 %», «№1» или «—» */
+/** Подпись значения: «100», «№1» или «—» */
 export function scoreLabel(e: Exercise): string {
   if (e.emgPercent !== null) return String(e.emgPercent);
   if (e.rank) return `№${e.rank}`;

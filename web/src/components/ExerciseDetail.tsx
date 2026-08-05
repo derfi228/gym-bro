@@ -33,8 +33,8 @@ function WeightInput({
           type="number"
           min={0}
           max={500}
-          step={2.5}
-          inputMode="decimal"
+          step={1}
+          inputMode="numeric"
           value={value ?? ""}
           placeholder="—"
           onChange={(e) => {

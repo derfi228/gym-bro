@@ -1133,6 +1133,38 @@ export const splits: TrainingSplit[] = [
     evidenceNote:
       "Частота 3 раза в неделю на группу. В прямом сравнении с трёхдневным сплитом при равном объёме фулбоди дал не меньший, а по части групп больший прирост.",
     sourceId: "frequency",
+    days: [
+      {
+        name: "День A",
+        exerciseIds: [
+          "back-squat",
+          "bb-bench",
+          "pull-up",
+          "db-shoulder-press",
+          "bicycle-crunch",
+        ],
+      },
+      {
+        name: "День B",
+        exerciseIds: [
+          "romanian-deadlift",
+          "incline-row-45",
+          "dips-chest",
+          "bent-arm-lateral",
+          "standing-calf-raise",
+        ],
+      },
+      {
+        name: "День C",
+        exerciseIds: [
+          "leg-press",
+          "lat-pulldown",
+          "machine-press",
+          "bb-curl",
+          "rope-pushdown",
+        ],
+      },
+    ],
   },
   {
     id: "upper-lower",
@@ -1146,6 +1178,48 @@ export const splits: TrainingSplit[] = [
     evidenceNote:
       "Каждая группа дважды в неделю — это тот минимум частоты, который в мета-анализах стабильно обходит однократную нагрузку.",
     sourceId: "frequency",
+    days: [
+      {
+        name: "Верх — тяжёлый",
+        exerciseIds: [
+          "bb-bench",
+          "bent-over-row",
+          "db-shoulder-press",
+          "chin-up",
+          "close-grip-bench",
+        ],
+      },
+      {
+        name: "Низ — тяжёлый",
+        exerciseIds: [
+          "back-squat",
+          "romanian-deadlift",
+          "leg-press",
+          "standing-calf-raise",
+          "cable-crunch",
+        ],
+      },
+      {
+        name: "Верх — объёмный",
+        exerciseIds: [
+          "incline-row-45",
+          "cable-crossover",
+          "bent-arm-lateral",
+          "concentration-curl",
+          "rope-pushdown",
+        ],
+      },
+      {
+        name: "Низ — объёмный",
+        exerciseIds: [
+          "bulgarian-split-squat",
+          "leg-curl",
+          "hip-thrust",
+          "seated-calf-raise",
+          "side-plank",
+        ],
+      },
+    ],
   },
   {
     id: "ppl",
@@ -1159,6 +1233,41 @@ export const splits: TrainingSplit[] = [
     evidenceNote:
       "На шести днях каждая группа получает нагрузку дважды в неделю и большой объём. На трёх днях частота падает до одного раза и результат хуже.",
     sourceId: "frequency",
+    days: [
+      {
+        name: "Толкай",
+        exerciseIds: [
+          "bb-bench",
+          "db-shoulder-press",
+          "cable-crossover",
+          "bent-arm-lateral",
+          "triangle-push-up",
+          "rope-pushdown",
+        ],
+      },
+      {
+        name: "Тяни",
+        exerciseIds: [
+          "pull-up",
+          "bent-over-row",
+          "lat-pulldown",
+          "seated-rear-lateral",
+          "bb-curl",
+          "db-shrug",
+        ],
+      },
+      {
+        name: "Ноги",
+        exerciseIds: [
+          "back-squat",
+          "romanian-deadlift",
+          "leg-press",
+          "leg-curl",
+          "standing-calf-raise",
+          "bicycle-crunch",
+        ],
+      },
+    ],
   },
   {
     id: "gvt",
@@ -1172,6 +1281,20 @@ export const splits: TrainingSplit[] = [
     evidenceNote:
       "Прямое сравнение показало: 5 подходов дали не меньше массы и силы, чем 10. Свыше 5 подходов на упражнение прибавки не дают, а усталость растёт.",
     sourceId: "gvt",
+    days: [
+      {
+        name: "Грудь и спина — 10×10",
+        exerciseIds: ["bb-bench", "bent-over-row", "incline-db-fly"],
+      },
+      {
+        name: "Ноги и пресс — 10×10",
+        exerciseIds: ["back-squat", "leg-curl", "cable-crunch"],
+      },
+      {
+        name: "Руки и плечи — 10×10",
+        exerciseIds: ["db-shoulder-press", "bb-curl", "skullcrusher"],
+      },
+    ],
   },
   {
     id: "bro-split",
@@ -1185,6 +1308,43 @@ export const splits: TrainingSplit[] = [
     evidenceNote:
       "Каждая группа раз в неделю. При равном недельном объёме разница с частыми схемами невелика, но набрать объём за одну сессию тяжелее.",
     sourceId: "frequency",
+    days: [
+      {
+        name: "Грудь",
+        exerciseIds: ["bb-bench", "incline-db-fly", "cable-crossover", "pec-deck"],
+      },
+      {
+        name: "Спина",
+        exerciseIds: ["pull-up", "bent-over-row", "seated-row", "db-shrug"],
+      },
+      {
+        name: "Ноги",
+        exerciseIds: [
+          "back-squat",
+          "leg-press",
+          "romanian-deadlift",
+          "standing-calf-raise",
+        ],
+      },
+      {
+        name: "Плечи",
+        exerciseIds: [
+          "db-shoulder-press",
+          "bent-arm-lateral",
+          "seated-rear-lateral",
+          "db-front-raise",
+        ],
+      },
+      {
+        name: "Руки",
+        exerciseIds: [
+          "bb-curl",
+          "concentration-curl",
+          "skullcrusher",
+          "rope-pushdown",
+        ],
+      },
+    ],
   },
   {
     id: "max-ot",
@@ -1198,6 +1358,19 @@ export const splits: TrainingSplit[] = [
     evidenceNote:
       "Малое число повторов, 2–3 минуты отдыха, каждая группа раз в неделю. Рецензируемых исследований именно этой методики на прирост мышц нет; автор — владелец компании спортпита.",
     sourceId: "max-ot",
+    days: [
+      {
+        name: "Грудь и трицепс",
+        exerciseIds: ["bb-bench", "machine-press", "close-grip-bench"],
+      },
+      { name: "Спина", exerciseIds: ["bent-over-row", "lat-pulldown", "db-shrug"] },
+      {
+        name: "Плечи",
+        exerciseIds: ["db-shoulder-press", "bent-arm-lateral", "upright-row"],
+      },
+      { name: "Ноги", exerciseIds: ["back-squat", "leg-press", "standing-calf-raise"] },
+      { name: "Руки", exerciseIds: ["bb-curl", "preacher-curl", "skullcrusher"] },
+    ],
   },
 ];
 

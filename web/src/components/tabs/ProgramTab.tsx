@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { TrainingSplit } from "@shared/types";
 import ExerciseDetail from "@/components/ExerciseDetail";
 import {
   buildProgram,
@@ -55,6 +56,33 @@ function ProgramList() {
   const { programs, openProgram, addProgram, loads, restrictions } = useStore();
   const [minutes, setMinutes] = useState(40);
   const [openSplit, setOpenSplit] = useState<string | null>(null);
+  const [splitExercise, setSplitExercise] = useState<string | null>(null);
+
+  const split = splits.find((s) => s.id === openSplit) ?? null;
+
+  if (split && splitExercise) {
+    return (
+      <div className="flex flex-col gap-4">
+        <button
+          onClick={() => setSplitExercise(null)}
+          className="btn-ghost self-start px-4 py-1.5 text-[12px]"
+        >
+          ← {split.name}
+        </button>
+        <ExerciseDetail exercise={exerciseById(splitExercise)} />
+      </div>
+    );
+  }
+
+  if (split) {
+    return (
+      <SplitDetail
+        split={split}
+        onBack={() => setOpenSplit(null)}
+        onOpenExercise={setSplitExercise}
+      />
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -116,60 +144,42 @@ function ProgramList() {
       {/* Известные методики */}
       <p className="kicker px-1">Известные методики</p>
       <ul className="flex flex-col gap-2.5">
-        {splits.map((s, i) => {
-          const isOpen = openSplit === s.id;
-          return (
-            <li key={s.id}>
-              <button
-                onClick={() => setOpenSplit(isOpen ? null : s.id)}
-                aria-expanded={isOpen}
-                className="card reveal w-full p-5 text-left transition-colors hover:border-accent-dim"
-                style={{ "--i": i } as React.CSSProperties}
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <p className="text-[15px] text-bright">{s.name}</p>
-                    <p className="mt-1.5 text-xs text-dim">
-                      {s.daysPerWeek} дн/нед · каждая группа {s.frequencyPerWeek}{" "}
-                      {s.frequencyPerWeek === 1 ? "раз" : "раза"} · {s.repRange}{" "}
-                      повторов
-                    </p>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <p className="font-serif text-3xl font-light text-accent">
-                      {s.evidenceScore}
-                    </p>
-                    <p className="kicker mt-0.5">по данным</p>
-                  </div>
+        {splits.map((s, i) => (
+          <li key={s.id}>
+            <button
+              onClick={() => setOpenSplit(s.id)}
+              className="card reveal w-full p-5 text-left transition-colors hover:border-accent-dim"
+              style={{ "--i": i } as React.CSSProperties}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="text-[15px] text-bright">{s.name}</p>
+                  <p className="mt-1.5 text-xs text-dim">
+                    {s.daysPerWeek} дн/нед · каждая группа {s.frequencyPerWeek}{" "}
+                    {s.frequencyPerWeek === 1 ? "раз" : "раза"} · {s.repRange}{" "}
+                    повторов
+                  </p>
                 </div>
-
-                <div className="meter mt-3.5">
-                  <span style={{ width: `${s.evidenceScore}%` }} />
+                <div className="shrink-0 text-right">
+                  <p className="font-serif text-3xl font-light text-accent">
+                    {s.evidenceScore}
+                  </p>
+                  <p className="kicker mt-0.5">по данным</p>
                 </div>
+              </div>
 
-                {isOpen && (
-                  <div className="mt-4 border-t border-line pt-3.5">
-                    <p className="text-sm leading-relaxed text-bright">
-                      {s.evidenceNote}
-                    </p>
-                    <div className="mt-3 flex flex-wrap gap-1.5">
-                      <span className="chip">
-                        {s.weeklySetsPerMuscle} подходов в неделю
-                      </span>
-                      <span className="chip">
-                        {s.level === "novice"
-                          ? "Новичок"
-                          : s.level === "intermediate"
-                            ? "Средний"
-                            : "Продвинутый"}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </button>
-            </li>
-          );
-        })}
+              <div className="meter mt-3.5">
+                <span style={{ width: `${s.evidenceScore}%` }} />
+              </div>
+
+              <p className="mt-3 text-[11px] text-dim">
+                {s.days.length}{" "}
+                {s.days.length === 1 ? "тренировка" : "тренировки"} в цикле —
+                открыть список упражнений
+              </p>
+            </button>
+          </li>
+        ))}
       </ul>
       <p className="px-1 text-[11px] leading-relaxed text-dim">
         Оценка отражает, насколько методика ложится на данные о недельном объёме
@@ -218,6 +228,109 @@ function ProgramList() {
           );
         })}
       </ul>
+    </div>
+  );
+}
+
+/* ── Методика: дни и упражнения ───────────────────────────────────────────── */
+
+function SplitDetail({
+  split,
+  onBack,
+  onOpenExercise,
+}: {
+  split: TrainingSplit;
+  onBack: () => void;
+  onOpenExercise: (id: string) => void;
+}) {
+  const levelLabel =
+    split.level === "novice"
+      ? "Новичок"
+      : split.level === "intermediate"
+        ? "Средний"
+        : "Продвинутый";
+
+  return (
+    <div className="flex flex-col gap-4">
+      <button onClick={onBack} className="btn-ghost self-start px-4 py-1.5 text-[12px]">
+        ← Все методики
+      </button>
+
+      <div className="card card-lit p-5 sm:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <h2 className="font-serif text-3xl font-light leading-tight text-bright">
+            {split.name}
+          </h2>
+          <div className="shrink-0 text-right">
+            <p className="font-serif text-4xl font-light text-accent">
+              {split.evidenceScore}
+            </p>
+            <p className="kicker mt-0.5">по данным</p>
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-1.5">
+          <span className="chip">{split.daysPerWeek} дней в неделю</span>
+          <span className="chip">
+            группа {split.frequencyPerWeek}{" "}
+            {split.frequencyPerWeek === 1 ? "раз" : "раза"} в неделю
+          </span>
+          <span className="chip">{split.weeklySetsPerMuscle} подходов</span>
+          <span className="chip">{split.repRange} повторов</span>
+          <span className="chip">{levelLabel}</span>
+        </div>
+
+        <div className="callout mt-5">
+          <p className="text-sm leading-relaxed text-bright">
+            {split.evidenceNote}
+          </p>
+        </div>
+      </div>
+
+      {split.days.map((day, di) => (
+        <div key={day.name} className="card p-5">
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="kicker">{day.name}</p>
+            <p className="text-[11px] text-dim">
+              {day.exerciseIds.length} упражнений
+            </p>
+          </div>
+
+          <ul className="mt-4 flex flex-col gap-1.5">
+            {day.exerciseIds.map((id, i) => {
+              const ex = exerciseById(id);
+              return (
+                <li key={id}>
+                  <button
+                    onClick={() => onOpenExercise(id)}
+                    className="reveal flex w-full items-center justify-between gap-3 rounded-[12px] border border-line px-3.5 py-2.5 text-left transition-colors hover:border-accent-dim hover:bg-accent/6"
+                    style={{ "--i": di * 2 + i } as React.CSSProperties}
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate text-[13px] text-bright">
+                        {ex.name}
+                      </span>
+                      <span className="text-[10px] text-dim">
+                        {muscleNames[ex.primary]} ·{" "}
+                        {difficultyLabels[ex.difficulty]} ·{" "}
+                        {equipmentLabels[ex.equipment]}
+                      </span>
+                    </span>
+                    <span className="shrink-0 font-serif text-base font-light text-accent">
+                      {scoreLabel(ex)}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))}
+
+      <p className="px-1 text-[11px] leading-relaxed text-dim">
+        Подходы и повторы задаёт методика; конкретные упражнения можно менять на
+        любые для той же группы.
+      </p>
     </div>
   );
 }

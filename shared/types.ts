@@ -140,9 +140,17 @@ export interface ExerciseWeights {
 
 /* ── Готовые методики ─────────────────────────────────────────────────────── */
 
+/** Один тренировочный день методики */
+export interface SplitDay {
+  name: string;
+  exerciseIds: string[];
+}
+
 export interface TrainingSplit {
   id: string;
   name: string;
+  /** Из каких тренировок состоит неделя */
+  days: SplitDay[];
   /** Как часто каждая группа получает нагрузку за неделю */
   frequencyPerWeek: number;
   daysPerWeek: number;

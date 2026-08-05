@@ -143,14 +143,23 @@ export default function MuscleFigure({
 
         const body = (
           <>
+            {/* Заливка. Обводка цветом фона разводит соседние мышцы */}
             <path {...paint} />
             <path {...paint} transform={MIRROR} />
-            {isActive && (
-              <g fill="none" stroke="var(--color-accent-hi)" strokeWidth="2.5">
-                <path d={d} />
-                <path d={d} transform={MIRROR} />
-              </g>
-            )}
+
+            {/* Контур поверх заливки — чтобы группы читались по отдельности */}
+            <g
+              fill="none"
+              stroke={
+                isActive ? "var(--color-accent-hi)" : "var(--color-accent)"
+              }
+              strokeWidth={isActive ? 2.6 : 1.4}
+              strokeOpacity={isActive ? 1 : 0.75}
+              className="pointer-events-none transition-all duration-200"
+            >
+              <path d={d} />
+              <path d={d} transform={MIRROR} />
+            </g>
             {isOver && mode === "fill" && (
               <g
                 className="aura pointer-events-none"

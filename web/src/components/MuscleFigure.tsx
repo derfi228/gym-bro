@@ -1,6 +1,7 @@
 "use client";
 
 import type { BodyView, MuscleId } from "@shared/types";
+import type { MuscleStatus } from "@/lib/landmarks";
 
 /**
  * Схема мышечных групп: вид спереди и сзади.
@@ -44,26 +45,41 @@ export function viewOf(id: MuscleId): BodyView {
 
 const MIRROR = "translate(340,0) scale(-1,1)";
 
+/** Цвет группы по статусу недельного объёма */
+const STATUS_COLOR: Record<MuscleStatus, string> = {
+  none: "var(--color-idle)",
+  low: "var(--color-accent-dim)",
+  optimal: "var(--color-accent)",
+  high: "var(--color-warm)",
+  over: "var(--color-over)",
+};
+
 type Props = {
   /** Значение 0..1 по группам */
   values: Partial<Record<MuscleId, number>>;
   /**
-   * fill — заливка снизу вверх (набранный объём за неделю)
+   * fill — заливка снизу вверх (набранный объём)
    * intensity — равномерная яркость (вовлечённость в упражнение)
    */
   mode?: "fill" | "intensity";
+  /**
+   * Статус группы. Задаёт цвет заливки: не затронута, мало, в диапазоне,
+   * много, перебор. Без него всё рисуется акцентом.
+   */
+  statuses?: Partial<Record<MuscleId, MuscleStatus>>;
   view: BodyView;
   selected?: MuscleId | null;
   onSelect?: (id: MuscleId) => void;
   labelOf?: (id: MuscleId) => string;
   className?: string;
-  /** Префикс для id градиентов — чтобы две схемы на странице не конфликтовали */
+  /** Префикс для id масок — чтобы две схемы на странице не конфликтовали */
   uid?: string;
 };
 
 export default function MuscleFigure({
   values,
   mode = "fill",
+  statuses,
   view,
   selected = null,
   onSelect,
@@ -90,26 +106,14 @@ export default function MuscleFigure({
       }
     >
       <defs>
-        {ids.map((id) => {
-          const v = Math.min(Math.max(values[id] ?? 0, 0), 1);
-          if (mode === "intensity") return null;
-          const stop = `${v * 100}%`;
-          return (
-            <linearGradient
-              key={id}
-              id={`${uid}-${view}-${id}`}
-              x1="0"
-              y1="1"
-              x2="0"
-              y2="0"
-            >
-              <stop offset="0" stopColor="var(--color-accent)" stopOpacity="0.92" />
-              <stop offset={stop} stopColor="var(--color-accent)" stopOpacity="0.92" />
-              <stop offset={stop} stopColor="var(--color-accent)" stopOpacity="0.07" />
-              <stop offset="1" stopColor="var(--color-accent)" stopOpacity="0.07" />
-            </linearGradient>
-          );
-        })}
+        {ids.map((id) => (
+          // Обрезка по контуру группы: заливка — прямоугольник, который
+          // выезжает снизу вверх, поэтому её высоту можно анимировать
+          <clipPath key={id} id={`${uid}-${view}-${id}`}>
+            <path d={shapes[id]!} />
+            <path d={shapes[id]!} transform={MIRROR} />
+          </clipPath>
+        ))}
       </defs>
 
       {/* Силуэт */}
@@ -120,51 +124,65 @@ export default function MuscleFigure({
 
       {ids.map((id) => {
         const d = shapes[id]!;
-        const v = Math.min(Math.max(values[id] ?? 0, 0), 1);
+        const raw = values[id] ?? 0;
+        const v = Math.min(Math.max(raw, 0), 1);
+        const status = statuses?.[id];
         const isActive = id === selected;
-        const isOver = (values[id] ?? 0) > 1;
+        const isOver = status ? status === "over" : raw > 1;
+        const color = status ? STATUS_COLOR[status] : "var(--color-accent)";
 
-        const fill =
-          mode === "fill"
-            ? `url(#${uid}-${view}-${id})`
-            : "var(--color-accent)";
-        // В режиме вовлечённости яркость показывает вклад мышцы
-        const opacity = mode === "intensity" ? 0.1 + v * 0.9 : 1;
-
-        const paint = {
-          d,
-          fill,
-          fillOpacity: opacity,
-          style: isActive
-            ? { filter: "drop-shadow(0 0 6px rgb(111 159 216 / 0.65))" }
-            : undefined,
-          className: "transition-all duration-200",
-        };
+        const outline = { d, fill: "none" };
 
         const body = (
           <>
-            {/* Заливка. Обводка цветом фона разводит соседние мышцы */}
-            <path {...paint} />
-            <path {...paint} transform={MIRROR} />
-
-            {/* Контур поверх заливки — чтобы группы читались по отдельности */}
-            <g
-              fill="none"
-              stroke={
-                isActive ? "var(--color-accent-hi)" : "var(--color-accent)"
-              }
-              strokeWidth={isActive ? 2.6 : 1.4}
-              strokeOpacity={isActive ? 1 : 0.75}
-              className="pointer-events-none transition-all duration-200"
-            >
+            {/* Подложка: контур группы виден, даже когда объёма нет */}
+            <g fill={color} fillOpacity={0.08}>
               <path d={d} />
               <path d={d} transform={MIRROR} />
             </g>
+
+            {mode === "intensity" ? (
+              <g fill={color} fillOpacity={0.1 + v * 0.9}>
+                <path d={d} />
+                <path d={d} transform={MIRROR} />
+              </g>
+            ) : (
+              <g clipPath={`url(#${uid}-${view}-${id})`} stroke="none">
+                <rect
+                  x="0"
+                  y="0"
+                  width="340"
+                  height="620"
+                  fill={color}
+                  fillOpacity={0.92}
+                  className="muscle-fill"
+                  style={{ "--v": v } as React.CSSProperties}
+                />
+              </g>
+            )}
+
+            {/* Контур поверх заливки — чтобы группы читались по отдельности */}
+            <g
+              stroke={isActive ? "var(--color-accent-hi)" : color}
+              strokeWidth={isActive ? 2.6 : 1.4}
+              strokeOpacity={isActive ? 1 : status === "none" ? 0.5 : 0.8}
+              className="pointer-events-none transition-all duration-300"
+              style={
+                isActive
+                  ? { filter: "drop-shadow(0 0 5px rgb(168 200 238 / 0.5))" }
+                  : undefined
+              }
+            >
+              <path {...outline} />
+              <path {...outline} transform={MIRROR} />
+            </g>
+
+            {/* Перебор объёма — пунктир поверх */}
             {isOver && mode === "fill" && (
               <g
                 className="aura pointer-events-none"
                 fill="none"
-                stroke="var(--color-accent-hi)"
+                stroke="var(--color-over)"
                 strokeWidth="2"
                 strokeDasharray="5 4"
               >
@@ -175,7 +193,15 @@ export default function MuscleFigure({
           </>
         );
 
-        if (!interactive) return <g key={id}>{body}</g>;
+        const title = labelOf ? <title>{labelOf(id)}</title> : null;
+
+        if (!interactive)
+          return (
+            <g key={id}>
+              {title}
+              {body}
+            </g>
+          );
 
         return (
           <g
@@ -191,8 +217,9 @@ export default function MuscleFigure({
                 onSelect!(id);
               }
             }}
-            className="cursor-pointer outline-none"
+            className="muscle-hit cursor-pointer outline-none"
           >
+            {title}
             {body}
           </g>
         );

@@ -12,6 +12,12 @@
   --color-card: #0f141d;
   --color-line: #1b2432;
 
+  /* Шкала объёма: не затронуто → в диапазоне → много → перебор.
+     Единственное место, где цвет несёт смысл помимо акцента */
+  --color-idle: #38414f;
+  --color-warm: #d9a45c;
+  --color-over: #d4645c;
+
   --radius-pill: 100px;
 }
 
@@ -143,6 +149,46 @@ h3 {
     white-space: nowrap;
   }
 
+  /* Кнопка-шаг у числа подходов */
+  .stepper {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 100px;
+    border: 1px solid rgb(var(--accent-rgb) / 0.3);
+    color: var(--color-accent);
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+    transition: border-color 0.18s, background 0.18s;
+  }
+  .stepper:hover {
+    border-color: var(--color-accent);
+    background: rgb(var(--accent-rgb) / 0.08);
+  }
+
+  /* Мелкое действие в строке упражнения */
+  .chip-btn {
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    color: var(--color-dim);
+    border: 1px solid var(--color-line);
+    background: none;
+    padding: 4px 11px;
+    border-radius: 100px;
+    cursor: pointer;
+    transition: border-color 0.18s, color 0.18s;
+  }
+  .chip-btn:hover:not(:disabled) {
+    border-color: var(--color-accent-dim);
+    color: var(--color-accent);
+  }
+  .chip-btn:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+
   .callout {
     border-left: 2px solid var(--color-accent);
     background: linear-gradient(90deg, rgb(var(--accent-rgb) / 0.07), transparent);
@@ -167,6 +213,31 @@ h3 {
       var(--color-accent)
     );
   }
+}
+
+/* ── Схема тела ──────────────────────────────────────────────────────────── */
+
+/* Заливка группы: прямоугольник во всю фигуру, обрезанный контуром мышцы.
+   --v (0..1) поднимает его снизу вверх, поэтому объём меняется плавно */
+.muscle-fill {
+  transform: translateY(calc((1 - var(--v, 0)) * 100%));
+  transition: transform 0.55s cubic-bezier(0.22, 0.7, 0.3, 1), fill 0.3s;
+}
+
+.muscle-hit:hover .muscle-fill {
+  fill-opacity: 1;
+}
+.muscle-hit:hover path {
+  stroke-opacity: 1;
+}
+
+/* Легенда шкалы объёма */
+.dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 100px;
+  flex-shrink: 0;
 }
 
 /* ── Эффекты ─────────────────────────────────────────────────────────────── */

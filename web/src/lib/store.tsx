@@ -9,6 +9,7 @@ import {
 } from "react";
 import type { ExerciseWeights, MuscleId, MuscleLoad } from "@shared/types";
 import { demoExercises, exerciseById, exercisesFor, initialLoads } from "./demo";
+import { contribution, landmarks, muscleIds, targetSets } from "./volume";
 
 /* ── Модель программы в интерфейсе ────────────────────────────────────────── */
 
@@ -46,9 +47,27 @@ const repsFor = (muscle: MuscleId) =>
     ? "12–15"
     : "8–10";
 
+export const slotOf = (
+  exerciseId: string,
+  sets: number,
+  key: string
+): ProgramSlot => {
+  const ex = exerciseById(exerciseId);
+  return {
+    key,
+    exerciseId,
+    sets,
+    reps: repsFor(ex.primary),
+    rest: restFor(ex.difficulty),
+  };
+};
+
 /**
  * Собирает программу под заданное время.
- * Отстающие мышцы идут первыми, перебранные и запрещённые пропускаются.
+ *
+ * Группы ранжируются по нехватке недельного объёма относительно целевого;
+ * упражнения добираются по кругу, пока хватает времени, и каждое добавление
+ * пересчитывает набранный объём — так одна группа не забирает всю тренировку.
  */
 export function buildProgram(
   minutes: number,
@@ -56,32 +75,46 @@ export function buildProgram(
   opts: { avoid?: MuscleId[]; name?: string; note?: string } = {}
 ): Program {
   const avoid = new Set(opts.avoid ?? []);
-  const ranked = [...loads]
-    .filter((l) => !avoid.has(l.muscleId) && l.ratio < 1)
-    .sort((a, b) => a.ratio - b.ratio);
+  const done = new Map(loads.map((l) => [l.muscleId, l.setsDone]));
+
+  // Сколько подходов группа наберёт с учётом уже добавленных упражнений
+  const planned = new Map<MuscleId, number>();
+  const gained = (m: MuscleId) => (done.get(m) ?? 0) + (planned.get(m) ?? 0);
 
   const slots: ProgramSlot[] = [];
-  let used = 0;
+  const used = new Set<string>();
+  let spent = 0;
 
-  for (const load of ranked) {
-    const best = exercisesFor(load.muscleId)[0];
-    if (!best) continue;
-    const sets = load.ratio < 0.4 ? 4 : 3;
-    const rest = restFor(best.difficulty);
-    const cost = (sets * (40 + rest)) / 60;
-    if (used + cost > minutes) continue;
-    slots.push({
-      key: `${load.muscleId}-${slots.length}`,
-      exerciseId: best.id,
-      sets,
-      reps: repsFor(load.muscleId),
-      rest,
-    });
-    used += cost;
+  // До 8 упражнений: дальше тренировка перестаёт помещаться в разумное время
+  for (let round = 0; round < 8; round++) {
+    const next = muscleIds
+      .filter((m) => !avoid.has(m) && gained(m) < landmarks[m].mavLow)
+      .sort((a, b) => gained(a) / targetSets(a) - gained(b) / targetSets(b));
+
+    let added = false;
+    for (const m of next) {
+      const best = exercisesFor(m).find((e) => !used.has(e.id));
+      if (!best) continue;
+
+      const sets = gained(m) < landmarks[m].mev / 2 ? 4 : 3;
+      const slot = slotOf(best.id, sets, `${m}-${slots.length}`);
+      if (spent + slotCost(slot) > minutes) continue;
+
+      slots.push(slot);
+      used.add(best.id);
+      spent += slotCost(slot);
+      for (const mm of muscleIds) {
+        const c = contribution(best, mm);
+        if (c > 0) planned.set(mm, (planned.get(mm) ?? 0) + sets * c);
+      }
+      added = true;
+      break;
+    }
+    if (!added) break;
   }
 
   return {
-    id: `prog-${Date.now()}-${Math.round(used)}`,
+    id: `prog-${Date.now()}-${Math.round(spent)}`,
     name: opts.name ?? `Программа на ${minutes} мин`,
     targetMin: minutes,
     slots,
@@ -156,6 +189,13 @@ type Store = {
   /** Отметить выполненный подход: заполняет схему тела */
   logSet: (exerciseId: string) => void;
   swapExercise: (programId: string, slotKey: string, exerciseId: string) => void;
+  /** Изменить число подходов в слоте */
+  setSlotSets: (programId: string, slotKey: string, sets: number) => void;
+  setSlotRest: (programId: string, slotKey: string, rest: number) => void;
+  addSlot: (programId: string, exerciseId: string, sets?: number) => void;
+  removeSlot: (programId: string, slotKey: string) => void;
+  /** Сдвинуть упражнение в порядке выполнения */
+  moveSlot: (programId: string, slotKey: string, dir: -1 | 1) => void;
   setProgramDuration: (programId: string, minutes: number) => void;
   addProgram: (p: Program) => void;
   openProgram: (id: string | null) => void;
@@ -192,18 +232,74 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (!ex) return;
     setLoads((prev) =>
       prev.map((l) => {
-        const delta =
-          l.muscleId === ex.primary
-            ? 1
-            : ex.secondary.includes(l.muscleId)
-              ? 0.5
-              : 0;
+        const delta = contribution(ex, l.muscleId);
         if (delta === 0) return l;
         const setsDone = l.setsDone + delta;
         return { ...l, setsDone, ratio: setsDone / l.setsTarget };
       })
     );
   }, []);
+
+  /** Общая правка слотов программы */
+  const editSlots = useCallback(
+    (programId: string, fn: (slots: ProgramSlot[]) => ProgramSlot[]) => {
+      setPrograms((prev) =>
+        prev.map((p) => (p.id === programId ? { ...p, slots: fn(p.slots) } : p))
+      );
+    },
+    []
+  );
+
+  const setSlotSets = useCallback(
+    (programId: string, slotKey: string, sets: number) => {
+      const v = Math.min(10, Math.max(1, Math.round(sets)));
+      editSlots(programId, (slots) =>
+        slots.map((s) => (s.key === slotKey ? { ...s, sets: v } : s))
+      );
+    },
+    [editSlots]
+  );
+
+  const setSlotRest = useCallback(
+    (programId: string, slotKey: string, rest: number) => {
+      const v = Math.min(300, Math.max(30, Math.round(rest / 15) * 15));
+      editSlots(programId, (slots) =>
+        slots.map((s) => (s.key === slotKey ? { ...s, rest: v } : s))
+      );
+    },
+    [editSlots]
+  );
+
+  const addSlot = useCallback(
+    (programId: string, exerciseId: string, sets = 3) => {
+      editSlots(programId, (slots) => [
+        ...slots,
+        slotOf(exerciseId, sets, `s-${Date.now()}-${slots.length}`),
+      ]);
+    },
+    [editSlots]
+  );
+
+  const removeSlot = useCallback(
+    (programId: string, slotKey: string) => {
+      editSlots(programId, (slots) => slots.filter((s) => s.key !== slotKey));
+    },
+    [editSlots]
+  );
+
+  const moveSlot = useCallback(
+    (programId: string, slotKey: string, dir: -1 | 1) => {
+      editSlots(programId, (slots) => {
+        const i = slots.findIndex((s) => s.key === slotKey);
+        const j = i + dir;
+        if (i < 0 || j < 0 || j >= slots.length) return slots;
+        const next = [...slots];
+        [next[i], next[j]] = [next[j], next[i]];
+        return next;
+      });
+    },
+    [editSlots]
+  );
 
   const swapExercise = useCallback(
     (programId: string, slotKey: string, exerciseId: string) => {
@@ -223,21 +319,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
-  /** Меняет длительность: режет лишние слоты или добирает по объёму */
+  /** Меняет ориентир по времени. Упражнения не режутся — это делает пользователь */
   const setProgramDuration = useCallback(
     (programId: string, minutes: number) => {
       setPrograms((prev) =>
-        prev.map((p) => {
-          if (p.id !== programId) return p;
-          const kept: ProgramSlot[] = [];
-          let used = 0;
-          for (const s of p.slots) {
-            if (used + slotCost(s) > minutes) continue;
-            kept.push(s);
-            used += slotCost(s);
-          }
-          return { ...p, targetMin: minutes, slots: kept };
-        })
+        prev.map((p) => (p.id === programId ? { ...p, targetMin: minutes } : p))
       );
     },
     []
@@ -263,6 +349,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setWeight,
       logSet,
       swapExercise,
+      setSlotSets,
+      setSlotRest,
+      addSlot,
+      removeSlot,
+      moveSlot,
       setProgramDuration,
       addProgram,
       openProgram: setActiveProgramId,
@@ -278,6 +369,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setWeight,
       logSet,
       swapExercise,
+      setSlotSets,
+      setSlotRest,
+      addSlot,
+      removeSlot,
+      moveSlot,
       setProgramDuration,
       addProgram,
       addRestriction,

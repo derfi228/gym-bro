@@ -7,6 +7,7 @@ import type {
   StudySource,
   TrainingSplit,
 } from "@shared/types";
+import { muscleIds, targetSets } from "./landmarks";
 
 /**
  * Каталог упражнений и методик.
@@ -108,22 +109,28 @@ export const equipmentLabels = {
   cable: "Блок",
 } as const;
 
-/** Недельный объём: сделано подходов из целевого */
-export const initialLoads: MuscleLoad[] = [
-  { muscleId: "chest", setsDone: 12, setsTarget: 14, ratio: 12 / 14 },
-  { muscleId: "back", setsDone: 7, setsTarget: 16, ratio: 7 / 16 },
-  { muscleId: "delts", setsDone: 9, setsTarget: 16, ratio: 9 / 16 },
-  { muscleId: "biceps", setsDone: 8, setsTarget: 12, ratio: 8 / 12 },
-  { muscleId: "triceps", setsDone: 5, setsTarget: 12, ratio: 5 / 12 },
-  { muscleId: "traps", setsDone: 4, setsTarget: 8, ratio: 4 / 8 },
-  { muscleId: "forearms", setsDone: 3, setsTarget: 8, ratio: 3 / 8 },
-  { muscleId: "abs", setsDone: 6, setsTarget: 12, ratio: 6 / 12 },
-  { muscleId: "obliques", setsDone: 2, setsTarget: 8, ratio: 2 / 8 },
-  { muscleId: "glutes", setsDone: 5, setsTarget: 14, ratio: 5 / 14 },
-  { muscleId: "quads", setsDone: 18, setsTarget: 16, ratio: 18 / 16 },
-  { muscleId: "hamstrings", setsDone: 2, setsTarget: 12, ratio: 2 / 12 },
-  { muscleId: "calves", setsDone: 2, setsTarget: 10, ratio: 2 / 10 },
-];
+/** Сделано подходов за неделю на старте — целевой объём берётся из ориентиров */
+const doneThisWeek: Record<MuscleId, number> = {
+  chest: 18,
+  back: 7,
+  delts: 0,
+  biceps: 8,
+  triceps: 5,
+  traps: 4,
+  forearms: 3,
+  abs: 6,
+  obliques: 2,
+  glutes: 5,
+  quads: 14,
+  hamstrings: 2,
+  calves: 0,
+};
+
+export const initialLoads: MuscleLoad[] = muscleIds.map((muscleId) => {
+  const setsDone = doneThisWeek[muscleId];
+  const setsTarget = targetSets(muscleId);
+  return { muscleId, setsDone, setsTarget, ratio: setsDone / setsTarget };
+});
 
 export const demoExercises: Exercise[] = [
   /* ── Грудь ─────────────────────────────────────────────────────────────── */

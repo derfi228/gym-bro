@@ -116,7 +116,10 @@ export default function MuscleFigure({
         const isOver = status ? status === "over" : raw > 1;
         const color = status ? STATUS_COLOR[status] : "var(--color-accent)";
 
-        const outlines = ds.map((d, i) => <path key={i} d={d} />);
+        // vector-effect не наследуется от группы — только на самом пути
+        const outlines = ds.map((d, i) => (
+          <path key={i} d={d} vectorEffect="non-scaling-stroke" />
+        ));
 
         const body = (
           <>
@@ -152,10 +155,9 @@ export default function MuscleFigure({
             <g
               fill="none"
               stroke={isActive ? "var(--color-accent-hi)" : color}
-              // non-scaling-stroke: толщина в пикселях экрана, а не в единицах
-              // viewBox. Фигура уменьшается втрое, и без этого обводка
-              // становится тоньше пикселя — прорисовка пропадает
-              vectorEffect="non-scaling-stroke"
+              // Толщина в пикселях экрана: у путей стоит non-scaling-stroke.
+              // Фигура уменьшается втрое, и без этого обводка становится тоньше
+              // пикселя — прорисовка пропадает
               strokeWidth={isActive ? 2.5 : 1.1}
               strokeOpacity={isActive ? 1 : status === "none" ? 0.45 : 0.7}
               className="pointer-events-none transition-all duration-300"
@@ -174,7 +176,6 @@ export default function MuscleFigure({
                 className="aura pointer-events-none"
                 fill="none"
                 stroke="var(--color-over)"
-                vectorEffect="non-scaling-stroke"
                 strokeWidth="2"
                 strokeDasharray="4 3"
               >

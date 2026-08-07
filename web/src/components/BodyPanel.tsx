@@ -102,7 +102,7 @@ export default function BodyPanel({
         onSelect={onSelect ? pick : undefined}
         labelOf={labelOf}
         uid="panel"
-        className="relative mx-auto mt-3 w-full max-w-[250px]"
+        className="relative mx-auto mt-3 w-full max-w-[330px]"
       />
 
       {/* Легенда шкалы */}

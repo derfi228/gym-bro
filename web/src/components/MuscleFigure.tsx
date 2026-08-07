@@ -152,8 +152,12 @@ export default function MuscleFigure({
             <g
               fill="none"
               stroke={isActive ? "var(--color-accent-hi)" : color}
-              strokeWidth={isActive ? 4 : 1.6}
-              strokeOpacity={isActive ? 1 : status === "none" ? 0.35 : 0.55}
+              // non-scaling-stroke: толщина в пикселях экрана, а не в единицах
+              // viewBox. Фигура уменьшается втрое, и без этого обводка
+              // становится тоньше пикселя — прорисовка пропадает
+              vectorEffect="non-scaling-stroke"
+              strokeWidth={isActive ? 2.5 : 1.1}
+              strokeOpacity={isActive ? 1 : status === "none" ? 0.45 : 0.7}
               className="pointer-events-none transition-all duration-300"
               style={
                 isActive
@@ -170,8 +174,9 @@ export default function MuscleFigure({
                 className="aura pointer-events-none"
                 fill="none"
                 stroke="var(--color-over)"
-                strokeWidth="3"
-                strokeDasharray="10 8"
+                vectorEffect="non-scaling-stroke"
+                strokeWidth="2"
+                strokeDasharray="4 3"
               >
                 {outlines}
               </g>

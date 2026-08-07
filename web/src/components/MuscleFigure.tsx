@@ -4,6 +4,7 @@ import type { BodyView, MuscleId } from "@shared/types";
 import type { MuscleStatus } from "@/lib/landmarks";
 import {
   BACK,
+  BODY_OUTLINE,
   CANVAS,
   FRONT,
   SILHOUETTE_BACK,
@@ -99,8 +100,9 @@ export default function MuscleFigure({
         ))}
       </defs>
 
-      {/* Силуэт: голова, шея, кисти, стопы — всё, что не является группой */}
+      {/* Тело целиком: промежутки между группами читаются как тело, а не дыры */}
       <g fill="var(--color-line)" stroke="none">
+        <path d={BODY_OUTLINE[view]} fillRule="evenodd" />
         {silhouetteFor(view).map((d, i) => (
           <path key={i} d={d} />
         ))}

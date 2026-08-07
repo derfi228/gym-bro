@@ -78,9 +78,8 @@ export default function MuscleFigure({
     <svg
       viewBox={box}
       className={className}
-      // Зазоры между мышцами — цветом фона карточки
-      stroke="var(--color-card)"
-      strokeWidth={2}
+      // Разделителя между путями нет: он резал мышцу на плитки вместо волокон
+      stroke="none"
       strokeLinejoin="round"
       aria-label={
         mode === "fill"
@@ -145,12 +144,16 @@ export default function MuscleFigure({
               </g>
             )}
 
-            {/* Контур поверх заливки — чтобы группы читались по отдельности */}
+            {/*
+              Контур поверх заливки. У невыбранной группы он тонкий и
+              приглушённый — так внутренние пути читаются как волокна, а не как
+              нарезка. Границу показывает выбранная группа.
+            */}
             <g
               fill="none"
               stroke={isActive ? "var(--color-accent-hi)" : color}
-              strokeWidth={isActive ? 5 : 2.5}
-              strokeOpacity={isActive ? 1 : status === "none" ? 0.5 : 0.8}
+              strokeWidth={isActive ? 4 : 1.6}
+              strokeOpacity={isActive ? 1 : status === "none" ? 0.35 : 0.55}
               className="pointer-events-none transition-all duration-300"
               style={
                 isActive
@@ -167,7 +170,7 @@ export default function MuscleFigure({
                 className="aura pointer-events-none"
                 fill="none"
                 stroke="var(--color-over)"
-                strokeWidth="4"
+                strokeWidth="3"
                 strokeDasharray="10 8"
               >
                 {outlines}

@@ -163,6 +163,11 @@ cd mobile && npm install && npx expo start
 - Отдых между подходами: [Schoenfeld и др., 2016](https://www.researchgate.net/publication/284711582_Longer_Interset_Rest_Periods_Enhance_Muscle_Strength_and_Hypertrophy_in_Resistance-Trained_Men)
 - GVT: [Amirthalingam и др., 2017](https://pubmed.ncbi.nlm.nih.gov/28497285/)
 
+Контуры фигуры — из
+[react-native-body-highlighter](https://github.com/HichamELBSI/react-native-body-highlighter)
+(MIT, © 2022 ELABBASSI Hicham), переразмечены под наши группы. Условия лицензии
+в `web/src/lib/NOTICE-body-highlighter.txt` — файл не удалять.
+
 Ограничение метода: ЭМГ измеряет активацию мышцы в моменте и не является
 подтверждённым предиктором гипертрофии —
 [Vigotsky и др., Sports Medicine 2022](https://link.springer.com/article/10.1007/s40279-021-01619-2).
@@ -200,6 +205,22 @@ cd mobile && npm install && npx expo start
 
 ```bash
 gh run list --limit 3
+```
+
+Если сборка висит в очереди и не стартует, её держит предыдущий запуск через
+`concurrency: pages`. Запустить заново:
+
+```bash
+gh workflow run deploy.yml --ref main
+```
+
+## Бэкап
+
+Стабильная точка — тег **`v1.0`** и ветка `backup/2026-08-07-stable`:
+анатомическая карта мышц, конструктор программ с разбором объёма.
+
+```bash
+git reset --hard v1.0
 ```
 
 ## Журнал изменений

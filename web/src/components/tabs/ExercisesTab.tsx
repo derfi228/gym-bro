@@ -100,7 +100,7 @@ export default function ExercisesTab({
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="stagger flex flex-col gap-4">
       {/* Панель сбора своей тренировки */}
       {picking && (
         <div className="card card-lit sticky top-[60px] z-30 p-4">

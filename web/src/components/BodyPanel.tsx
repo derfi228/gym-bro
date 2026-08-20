@@ -70,12 +70,15 @@ export default function BodyPanel({
 
   return (
     <div className="card card-lit relative overflow-hidden p-5 sm:p-6">
+{/* Фигура — главный объект экрана, ей нужен свет: холодный сверху,
+          тёплый снизу. Так силуэт отрывается от карточки */}
       <div
         aria-hidden
-        className="aura pointer-events-none absolute left-1/2 top-1/3 h-72 w-72 -translate-x-1/2 rounded-full"
+        className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(closest-side, rgb(111 159 216 / 0.15), transparent)",
+            "radial-gradient(22rem 20rem at 50% 22%, rgb(111 159 216 / 0.18), transparent 68%)," +
+            "radial-gradient(18rem 16rem at 50% 96%, rgb(217 164 92 / 0.10), transparent 70%)",
         }}
       />
 

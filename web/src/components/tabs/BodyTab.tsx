@@ -32,7 +32,7 @@ export default function BodyTab() {
   if (session) return <SessionMode />;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="stagger flex flex-col gap-4">
       <div className="card flex flex-wrap items-center justify-between gap-3 px-5 py-4">
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="chip">182 см</span>

@@ -116,7 +116,7 @@ function ProgramList({ onNavigate }: { onNavigate: (tab: TabTarget) => void }) {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="stagger flex flex-col gap-4">
       {/* Своё время */}
       <div className="card card-lit p-5 sm:p-6">
         <p className="kicker">Собрать под своё время</p>
@@ -193,7 +193,7 @@ function ProgramList({ onNavigate }: { onNavigate: (tab: TabTarget) => void }) {
       </div>
 
       {/* Собранные пользователем */}
-      <p className="kicker mt-2 px-1">Пользовательские тренировки</p>
+      <p className="section-label mt-3 px-1">Пользовательские тренировки</p>
       {programs.some((p) => !p.builtIn) ? (
         <ProgramCards
           list={programs.filter((p) => !p.builtIn)}
@@ -209,7 +209,7 @@ function ProgramList({ onNavigate }: { onNavigate: (tab: TabTarget) => void }) {
       )}
 
       {/* Известные методики */}
-      <p className="kicker px-1">Известные методики</p>
+      <p className="section-label px-1">Известные методики</p>
       <ul className="flex flex-col gap-2.5">
         {splits.map((s, i) => (
           <li key={s.id}>
@@ -255,7 +255,7 @@ function ProgramList({ onNavigate }: { onNavigate: (tab: TabTarget) => void }) {
       </p>
 
       {/* Заготовки GymBro */}
-      <p className="kicker mt-2 px-1">Разовые тренировки</p>
+      <p className="section-label mt-3 px-1">Разовые тренировки</p>
       <ProgramCards
         list={programs.filter((p) => p.builtIn)}
         openProgram={openProgram}
@@ -449,7 +449,7 @@ function SplitDetail({
                   );
                   onNavigate("body");
                 }}
-                className="btn px-6 py-2 text-[13px]"
+                className="btn btn-warm px-6 py-2 text-[13px]"
               >
                 Начать
               </button>
@@ -754,7 +754,7 @@ function ProgramBuilder({
               onNavigate("body");
             }}
             disabled={program.slots.length === 0}
-            className="btn px-6 py-2 text-[13px] disabled:cursor-default disabled:opacity-40"
+            className="btn btn-warm px-6 py-2 text-[13px] disabled:cursor-default disabled:opacity-40"
           >
             Начать тренировку
           </button>

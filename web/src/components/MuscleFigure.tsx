@@ -114,7 +114,13 @@ export default function MuscleFigure({
         const status = statuses?.[id];
         const isActive = id === selected;
         const isOver = status ? status === "over" : raw > 1;
-        const color = status ? STATUS_COLOR[status] : "var(--color-accent)";
+        // Незатронутая группа — серая, чуть светлее тела: видно, но не спутать
+        const untouched = raw <= 0;
+        const color = status
+          ? STATUS_COLOR[status]
+          : untouched
+            ? "var(--color-idle)"
+            : "var(--color-accent)";
 
         // vector-effect не наследуется от группы — только на самом пути
         const outlines = ds.map((d, i) => (
@@ -124,12 +130,15 @@ export default function MuscleFigure({
         const body = (
           <>
             {/* Подложка: группа читается как часть тела, даже когда объёма нет */}
-            <g fill={color} fillOpacity={mode === "intensity" ? 0.08 : 0.16}>
+            <g
+              fill={color}
+              fillOpacity={untouched ? 1 : mode === "intensity" ? 0.08 : 0.16}
+            >
               {outlines}
             </g>
 
             {mode === "intensity" ? (
-              <g fill={color} fillOpacity={0.1 + v * 0.9}>
+              <g fill={color} fillOpacity={untouched ? 1 : 0.1 + v * 0.9}>
                 {outlines}
               </g>
             ) : (

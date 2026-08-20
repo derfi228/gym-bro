@@ -298,6 +298,28 @@ h3 {
   animation: shimmer 6s ease-in-out infinite;
 }
 
+/* Конфетти в конце тренировки: полоски падают и крутятся.
+   Общее правило prefers-reduced-motion ниже глушит их вместе с остальным */
+@keyframes confettiFall {
+  from {
+    transform: translateY(-20%) rotate(0deg);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(320px) rotate(540deg);
+    opacity: 0;
+  }
+}
+.confetti {
+  position: absolute;
+  top: 0;
+  width: 7px;
+  height: 12px;
+  border-radius: 2px;
+  pointer-events: none;
+  animation: confettiFall 2.6s ease-in var(--d, 0s) forwards;
+}
+
 /* Появление каскадом: --i проставляется в разметке */
 @keyframes fadeUp {
   from {

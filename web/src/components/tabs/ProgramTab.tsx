@@ -8,6 +8,7 @@ import {
   buildProgram,
   programMinutes,
   slotCost,
+  slotOf,
   splitSlotKey,
   useStore,
   type Program,
@@ -65,6 +66,7 @@ export default function ProgramTab({
       program={program}
       onBack={() => openProgram(null)}
       onOpenSlot={setOpenSlot}
+      onNavigate={onNavigate}
     />
   );
 }
@@ -108,6 +110,7 @@ function ProgramList({ onNavigate }: { onNavigate: (tab: TabTarget) => void }) {
         split={split}
         onBack={() => setOpenSplit(null)}
         onOpenExercise={setSplitExercise}
+        onNavigate={onNavigate}
       />
     );
   }
@@ -366,12 +369,14 @@ function SplitDetail({
   split,
   onBack,
   onOpenExercise,
+  onNavigate,
 }: {
   split: TrainingSplit;
   onBack: () => void;
   onOpenExercise: (id: string) => void;
+  onNavigate: (tab: TabTarget) => void;
 }) {
-  const { splitSwaps, swapSplitExercise } = useStore();
+  const { splitSwaps, swapSplitExercise, startSession } = useStore();
   const [editing, setEditing] = useState<string | null>(null);
 
   const levelLabel =
@@ -424,11 +429,31 @@ function SplitDetail({
 
       {split.days.map((day, di) => (
         <div key={day.name} className="card p-5">
-          <div className="flex items-baseline justify-between gap-3">
+          <div className="flex flex-wrap items-baseline justify-between gap-3">
             <p className="kicker">{day.name}</p>
-            <p className="text-[11px] text-dim">
-              {day.exerciseIds.length} упражнений
-            </p>
+            <div className="flex items-baseline gap-3">
+              <p className="text-[11px] text-dim">
+                {day.exerciseIds.length} упражнений
+              </p>
+              <button
+                onClick={() => {
+                  startSession(
+                    `${split.name} · ${day.name}`,
+                    day.exerciseIds.map((id, i) =>
+                      slotOf(
+                        splitSwaps[splitSlotKey(split.id, day.name, id)] ?? id,
+                        3,
+                        `d${i}`
+                      )
+                    )
+                  );
+                  onNavigate("body");
+                }}
+                className="btn px-6 py-2 text-[13px]"
+              >
+                Начать
+              </button>
+            </div>
           </div>
 
           <ul className="mt-4 flex flex-col gap-1.5">
@@ -567,10 +592,12 @@ function ProgramBuilder({
   program,
   onBack,
   onOpenSlot,
+  onNavigate,
 }: {
   program: Program;
   onBack: () => void;
   onOpenSlot: (key: string) => void;
+  onNavigate: (tab: TabTarget) => void;
 }) {
   const {
     loads,
@@ -583,6 +610,7 @@ function ProgramBuilder({
     duplicateProgram,
     removeProgram,
     openProgram,
+    startSession,
   } = useStore();
 
   // Стартовый пресет: показываем как есть, править нечего
@@ -719,7 +747,17 @@ function ProgramBuilder({
               : `Свободно ещё ${program.targetMin - used} мин`}
         </p>
 
-        <div className="mt-4 flex flex-wrap gap-1.5">
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => {
+              startSession(program.name, program.slots);
+              onNavigate("body");
+            }}
+            disabled={program.slots.length === 0}
+            className="btn px-6 py-2 text-[13px] disabled:cursor-default disabled:opacity-40"
+          >
+            Начать тренировку
+          </button>
           <button
             onClick={() => {
               const copy = duplicateProgram(program.id);

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { MuscleId } from "@shared/types";
 import BodyPanel from "@/components/BodyPanel";
+import SessionMode from "@/components/SessionMode";
 import {
   difficultyLabels,
   equipmentLabels,
@@ -15,7 +16,7 @@ import { landmarks, statusLabels, statusOf } from "@/lib/landmarks";
 import { useStore } from "@/lib/store";
 
 export default function BodyTab() {
-  const { loads } = useStore();
+  const { loads, session } = useStore();
   const [selected, setSelected] = useState<MuscleId>("chest");
 
   const sets = useMemo(
@@ -27,6 +28,8 @@ export default function BodyTab() {
   const l = landmarks[selected];
   const status = statusOf(selected, done);
   const exercises = useMemo(() => exercisesFor(selected), [selected]);
+
+  if (session) return <SessionMode />;
 
   return (
     <div className="flex flex-col gap-4">

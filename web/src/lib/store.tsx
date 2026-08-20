@@ -15,6 +15,18 @@ import {
   initialLoads,
 } from "./demo";
 import { contribution, landmarks, muscleIds, targetSets } from "./volume";
+import * as sess from "./session";
+export type { Session } from "./session";
+export {
+  clock,
+  countdownLeft,
+  feedbackLabels,
+  isDone,
+  lowReps,
+  mmss,
+  suggestKg,
+  type Feedback,
+} from "./session";
 
 /* ── Модель программы в интерфейсе ────────────────────────────────────────── */
 
@@ -241,6 +253,15 @@ type Store = {
   /** Замены упражнений внутри методик, по ключу splitSlotKey */
   splitSwaps: Record<string, string>;
   swapSplitExercise: (key: string, exerciseId: string) => void;
+  /** Идущая тренировка. null — режим выключен */
+  session: sess.Session | null;
+  startSession: (name: string, slots: ProgramSlot[]) => void;
+  /** Подход с оценкой: правит рабочий вес и двигает тренировку */
+  completeSet: (f: sess.Feedback) => void;
+  skipRest: () => void;
+  pauseSession: () => void;
+  resumeSession: () => void;
+  endSession: () => void;
   /** Сбор своей тренировки во вкладке «Упражнения» */
   picker: PickerState;
   startPicker: () => void;
@@ -267,6 +288,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [weights, setWeights] = useState<Record<string, ExerciseWeights>>({});
   const [splitSwaps, setSplitSwaps] = useState<Record<string, string>>({});
   const [picker, setPicker] = useState<PickerState>(emptyPicker);
+  const [session, setSession] = useState<sess.Session | null>(null);
 
   const setWeight = useCallback(
     (
@@ -442,6 +464,52 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setSplitSwaps((prev) => ({ ...prev, [key]: exerciseId }));
   }, []);
 
+  const startSession = useCallback((name: string, slots: ProgramSlot[]) => {
+    setSession(sess.startSession(name, slots));
+  }, []);
+
+  /**
+   * Подход засчитывается в недельный объём, оценка двигает рабочий вес,
+   * тренировка переходит к отдыху.
+   */
+  const completeSet = useCallback(
+    (f: sess.Feedback) => {
+      setSession((s) => {
+        if (!s) return s;
+        const slot = s.slots[s.index];
+        if (!slot) return s;
+
+        logSet(slot.exerciseId);
+
+        const base = sess.suggestKg(
+          weights[slot.exerciseId],
+          sess.lowReps(slot.reps)
+        );
+        const next = sess.adjustKg(base, f);
+        if (next !== null && next !== weights[slot.exerciseId]?.workingKg)
+          setWeight(slot.exerciseId, "workingKg", next);
+
+        return sess.completeSet(s);
+      });
+    },
+    [logSet, setWeight, weights]
+  );
+
+  const pauseSession = useCallback(
+    () => setSession((s) => (s ? sess.pause(s) : s)),
+    []
+  );
+  const resumeSession = useCallback(
+    () => setSession((s) => (s ? sess.resume(s) : s)),
+    []
+  );
+
+  const skipRest = useCallback(
+    () => setSession((s) => (s ? { ...s, restEnds: null } : s)),
+    []
+  );
+  const endSession = useCallback(() => setSession(null), []);
+
   const startPicker = useCallback(
     () => setPicker({ active: true, name: "", picked: [] }),
     [],
@@ -512,6 +580,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       duplicateProgram,
       splitSwaps,
       swapSplitExercise,
+      session,
+      startSession,
+      completeSet,
+      skipRest,
+      pauseSession,
+      resumeSession,
+      endSession,
       picker,
       startPicker,
       cancelPicker,
@@ -543,6 +618,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       duplicateProgram,
       splitSwaps,
       swapSplitExercise,
+      session,
+      startSession,
+      completeSet,
+      skipRest,
+      pauseSession,
+      resumeSession,
+      endSession,
       picker,
       startPicker,
       cancelPicker,

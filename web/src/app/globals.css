@@ -168,6 +168,14 @@ h3 {
     background: rgb(var(--accent-rgb) / 0.08);
   }
 
+  /* Подпись автора заготовки: тёплый тон, чтобы отделялась от акцента */
+  .author {
+    font-size: 10.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-warm);
+  }
+
   /* Мелкое действие в строке упражнения */
   .chip-btn {
     font-size: 10.5px;

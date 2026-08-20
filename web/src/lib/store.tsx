@@ -8,7 +8,12 @@ import {
   useState,
 } from "react";
 import type { ExerciseWeights, MuscleId, MuscleLoad } from "@shared/types";
-import { demoExercises, exerciseById, exercisesFor, initialLoads } from "./demo";
+import {
+  demoExercises,
+  exerciseById,
+  exercisesFor,
+  initialLoads,
+} from "./demo";
 import { contribution, landmarks, muscleIds, targetSets } from "./volume";
 
 /* ── Модель программы в интерфейсе ────────────────────────────────────────── */
@@ -31,6 +36,17 @@ export type Program = {
   aiGenerated: boolean;
   /** Чем обоснована программа — заполняет помощник */
   note?: string;
+  /**
+   * Заготовка от GymBro. Её можно менять частично: упражнение заменяется на
+   * другое для той же группы, остальное — только через копию.
+   * У пользовательских программ поля нет.
+   */
+  builtIn?: boolean;
+  /**
+   * Оценка программы моделью. Модели пока нет, поле не заполняется —
+   * интерфейс показывает прочерк, а не выдуманное число.
+   */
+  aiScore?: number;
 };
 
 /** Минуты на упражнение: подходы × (работа + отдых) */
@@ -50,7 +66,7 @@ const repsFor = (muscle: MuscleId) =>
 export const slotOf = (
   exerciseId: string,
   sets: number,
-  key: string
+  key: string,
 ): ProgramSlot => {
   const ex = exerciseById(exerciseId);
   return {
@@ -72,7 +88,7 @@ export const slotOf = (
 export function buildProgram(
   minutes: number,
   loads: MuscleLoad[],
-  opts: { avoid?: MuscleId[]; name?: string; note?: string } = {}
+  opts: { avoid?: MuscleId[]; name?: string; note?: string } = {},
 ): Program {
   const avoid = new Set(opts.avoid ?? []);
   const done = new Map(loads.map((l) => [l.muscleId, l.setsDone]));
@@ -123,6 +139,22 @@ export function buildProgram(
   };
 }
 
+/** Ключ замены упражнения внутри дня методики */
+export const splitSlotKey = (
+  splitId: string,
+  dayName: string,
+  exerciseId: string,
+) => `${splitId}|${dayName}|${exerciseId}`;
+
+/** Набор упражнений, из которого пользователь собирает свою тренировку */
+export type PickerState = {
+  active: boolean;
+  name: string;
+  picked: string[];
+};
+
+const emptyPicker: PickerState = { active: false, name: "", picked: [] };
+
 /* ── Готовые программы ────────────────────────────────────────────────────── */
 
 const slot = (
@@ -130,7 +162,7 @@ const slot = (
   sets: number,
   reps: string,
   rest: number,
-  i: number
+  i: number,
 ): ProgramSlot => ({ key: `s${i}`, exerciseId, sets, reps, rest });
 
 const presetPrograms: Program[] = [
@@ -139,6 +171,7 @@ const presetPrograms: Program[] = [
     name: "Всё тело",
     targetMin: 55,
     aiGenerated: false,
+    builtIn: true,
     slots: [
       slot("back-squat", 4, "8", 150, 0),
       slot("bb-bench", 4, "8", 150, 1),
@@ -152,6 +185,7 @@ const presetPrograms: Program[] = [
     name: "Жимовая: грудь, плечи, трицепс",
     targetMin: 45,
     aiGenerated: false,
+    builtIn: true,
     slots: [
       slot("bb-bench", 4, "8", 150, 0),
       slot("db-shoulder-press", 3, "10", 90, 1),
@@ -165,6 +199,7 @@ const presetPrograms: Program[] = [
     name: "Быстрая на 20 минут",
     targetMin: 20,
     aiGenerated: false,
+    builtIn: true,
     slots: [
       slot("leg-press", 3, "12", 90, 0),
       slot("bb-bench", 3, "8", 120, 1),
@@ -184,11 +219,15 @@ type Store = {
   setWeight: (
     exerciseId: string,
     field: "peakKg" | "workingKg",
-    value: number | undefined
+    value: number | undefined,
   ) => void;
   /** Отметить выполненный подход: заполняет схему тела */
   logSet: (exerciseId: string) => void;
-  swapExercise: (programId: string, slotKey: string, exerciseId: string) => void;
+  swapExercise: (
+    programId: string,
+    slotKey: string,
+    exerciseId: string,
+  ) => void;
   /** Изменить число подходов в слоте */
   setSlotSets: (programId: string, slotKey: string, sets: number) => void;
   setSlotRest: (programId: string, slotKey: string, rest: number) => void;
@@ -198,6 +237,21 @@ type Store = {
   moveSlot: (programId: string, slotKey: string, dir: -1 | 1) => void;
   setProgramDuration: (programId: string, minutes: number) => void;
   addProgram: (p: Program) => void;
+  removeProgram: (id: string) => void;
+  /** Замены упражнений внутри методик, по ключу splitSlotKey */
+  splitSwaps: Record<string, string>;
+  swapSplitExercise: (key: string, exerciseId: string) => void;
+  /** Сбор своей тренировки во вкладке «Упражнения» */
+  picker: PickerState;
+  startPicker: () => void;
+  cancelPicker: () => void;
+  setPickerName: (name: string) => void;
+  togglePick: (exerciseId: string) => void;
+  clearPicks: () => void;
+  /** Создаёт тренировку из отмеченных упражнений, возвращает её id */
+  commitPicker: () => string | null;
+  /** Возвращает id копии, чтобы её можно было сразу открыть */
+  duplicateProgram: (id: string) => string | null;
   openProgram: (id: string | null) => void;
   addRestriction: (m: MuscleId) => void;
   resetWeek: () => void;
@@ -211,19 +265,21 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [activeProgramId, setActiveProgramId] = useState<string | null>(null);
   const [restrictions, setRestrictions] = useState<MuscleId[]>([]);
   const [weights, setWeights] = useState<Record<string, ExerciseWeights>>({});
+  const [splitSwaps, setSplitSwaps] = useState<Record<string, string>>({});
+  const [picker, setPicker] = useState<PickerState>(emptyPicker);
 
   const setWeight = useCallback(
     (
       exerciseId: string,
       field: "peakKg" | "workingKg",
-      value: number | undefined
+      value: number | undefined,
     ) => {
       setWeights((prev) => ({
         ...prev,
         [exerciseId]: { ...prev[exerciseId], exerciseId, [field]: value },
       }));
     },
-    []
+    [],
   );
 
   /** Подход добавляет объём целевой мышце и половину — вспомогательным */
@@ -236,7 +292,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         if (delta === 0) return l;
         const setsDone = l.setsDone + delta;
         return { ...l, setsDone, ratio: setsDone / l.setsTarget };
-      })
+      }),
     );
   }, []);
 
@@ -244,30 +300,32 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const editSlots = useCallback(
     (programId: string, fn: (slots: ProgramSlot[]) => ProgramSlot[]) => {
       setPrograms((prev) =>
-        prev.map((p) => (p.id === programId ? { ...p, slots: fn(p.slots) } : p))
+        prev.map((p) =>
+          p.id !== programId || p.builtIn ? p : { ...p, slots: fn(p.slots) },
+        ),
       );
     },
-    []
+    [],
   );
 
   const setSlotSets = useCallback(
     (programId: string, slotKey: string, sets: number) => {
       const v = Math.min(10, Math.max(1, Math.round(sets)));
       editSlots(programId, (slots) =>
-        slots.map((s) => (s.key === slotKey ? { ...s, sets: v } : s))
+        slots.map((s) => (s.key === slotKey ? { ...s, sets: v } : s)),
       );
     },
-    [editSlots]
+    [editSlots],
   );
 
   const setSlotRest = useCallback(
     (programId: string, slotKey: string, rest: number) => {
       const v = Math.min(300, Math.max(30, Math.round(rest / 15) * 15));
       editSlots(programId, (slots) =>
-        slots.map((s) => (s.key === slotKey ? { ...s, rest: v } : s))
+        slots.map((s) => (s.key === slotKey ? { ...s, rest: v } : s)),
       );
     },
-    [editSlots]
+    [editSlots],
   );
 
   const addSlot = useCallback(
@@ -277,14 +335,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         slotOf(exerciseId, sets, `s-${Date.now()}-${slots.length}`),
       ]);
     },
-    [editSlots]
+    [editSlots],
   );
 
   const removeSlot = useCallback(
     (programId: string, slotKey: string) => {
       editSlots(programId, (slots) => slots.filter((s) => s.key !== slotKey));
     },
-    [editSlots]
+    [editSlots],
   );
 
   const moveSlot = useCallback(
@@ -298,40 +356,134 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         return next;
       });
     },
-    [editSlots]
+    [editSlots],
   );
 
+  /**
+   * Замена упражнения. Во встроенной тренировке допустима только на упражнение
+   * той же целевой группы — иначе от заготовки ничего не остаётся.
+   */
   const swapExercise = useCallback(
     (programId: string, slotKey: string, exerciseId: string) => {
       setPrograms((prev) =>
-        prev.map((p) =>
-          p.id !== programId
-            ? p
-            : {
-                ...p,
-                slots: p.slots.map((s) =>
-                  s.key === slotKey ? { ...s, exerciseId } : s
-                ),
-              }
-        )
+        prev.map((p) => {
+          if (p.id !== programId) return p;
+          return {
+            ...p,
+            slots: p.slots.map((s) => {
+              if (s.key !== slotKey) return s;
+              const sameGroup =
+                exerciseById(exerciseId).primary ===
+                exerciseById(s.exerciseId).primary;
+              if (p.builtIn && !sameGroup) return s;
+              return { ...s, exerciseId };
+            }),
+          };
+        }),
       );
     },
-    []
+    [],
   );
 
   /** Меняет ориентир по времени. Упражнения не режутся — это делает пользователь */
   const setProgramDuration = useCallback(
     (programId: string, minutes: number) => {
       setPrograms((prev) =>
-        prev.map((p) => (p.id === programId ? { ...p, targetMin: minutes } : p))
+        prev.map((p) =>
+          p.id !== programId || p.builtIn ? p : { ...p, targetMin: minutes },
+        ),
       );
     },
-    []
+    [],
   );
 
   const addProgram = useCallback((p: Program) => {
     setPrograms((prev) => [p, ...prev]);
   }, []);
+
+  /** Удаление целиком. Стартовые пресеты не трогаем */
+  const removeProgram = useCallback(
+    (id: string) => {
+      const target = programs.find((p) => p.id === id);
+      if (!target || target.builtIn) return;
+      setPrograms((prev) => prev.filter((p) => p.id !== id));
+      setActiveProgramId((cur) => (cur === id ? null : cur));
+    },
+    [programs],
+  );
+
+  /**
+   * Копия программы. Единственный способ получить редактируемую версию
+   * встроенной тренировки: у копии builtIn снят всегда.
+   */
+  const duplicateProgram = useCallback(
+    (id: string) => {
+      const src = programs.find((p) => p.id === id);
+      if (!src) return null;
+      const stamp = Date.now();
+      const copy: Program = {
+        ...src,
+        id: `prog-${stamp}-${src.slots.length}`,
+        name: `${src.name} (копия)`,
+        builtIn: false,
+        slots: src.slots.map((s, i) => ({ ...s, key: `s-${stamp}-${i}` })),
+      };
+      setPrograms((prev) => [copy, ...prev]);
+      return copy.id;
+    },
+    [programs],
+  );
+
+  /** Замена упражнения в дне методики: только на ту же целевую группу */
+  const swapSplitExercise = useCallback((key: string, exerciseId: string) => {
+    const original = key.split("|")[2];
+    if (exerciseById(exerciseId).primary !== exerciseById(original).primary)
+      return;
+    setSplitSwaps((prev) => ({ ...prev, [key]: exerciseId }));
+  }, []);
+
+  const startPicker = useCallback(
+    () => setPicker({ active: true, name: "", picked: [] }),
+    [],
+  );
+  const cancelPicker = useCallback(() => setPicker(emptyPicker), []);
+  const setPickerName = useCallback(
+    (name: string) => setPicker((p) => ({ ...p, name })),
+    [],
+  );
+  const togglePick = useCallback((exerciseId: string) => {
+    setPicker((p) => ({
+      ...p,
+      picked: p.picked.includes(exerciseId)
+        ? p.picked.filter((id) => id !== exerciseId)
+        : [...p.picked, exerciseId],
+    }));
+  }, []);
+  const clearPicks = useCallback(
+    () => setPicker((p) => ({ ...p, picked: [] })),
+    [],
+  );
+
+  const commitPicker = useCallback(() => {
+    if (picker.picked.length === 0) return null;
+    const stamp = Date.now();
+    const slots = picker.picked.map((id, i) =>
+      slotOf(id, 3, `s-${stamp}-${i}`),
+    );
+    const program: Program = {
+      id: `prog-${stamp}-${slots.length}`,
+      name: picker.name.trim() || "Своя тренировка",
+      targetMin: Math.max(
+        10,
+        Math.round(slots.reduce((sum, s) => sum + slotCost(s), 0)),
+      ),
+      slots,
+      aiGenerated: false,
+    };
+    setPrograms((prev) => [program, ...prev]);
+    setPicker(emptyPicker);
+    return program.id;
+  }, [picker]);
 
   const addRestriction = useCallback((m: MuscleId) => {
     setRestrictions((prev) => (prev.includes(m) ? prev : [...prev, m]));
@@ -356,6 +508,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       moveSlot,
       setProgramDuration,
       addProgram,
+      removeProgram,
+      duplicateProgram,
+      splitSwaps,
+      swapSplitExercise,
+      picker,
+      startPicker,
+      cancelPicker,
+      setPickerName,
+      togglePick,
+      clearPicks,
+      commitPicker,
       openProgram: setActiveProgramId,
       addRestriction,
       resetWeek,
@@ -376,9 +539,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       moveSlot,
       setProgramDuration,
       addProgram,
+      removeProgram,
+      duplicateProgram,
+      splitSwaps,
+      swapSplitExercise,
+      picker,
+      startPicker,
+      cancelPicker,
+      setPickerName,
+      togglePick,
+      clearPicks,
+      commitPicker,
       addRestriction,
       resetWeek,
-    ]
+    ],
   );
 
   return (

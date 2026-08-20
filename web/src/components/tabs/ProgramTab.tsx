@@ -8,6 +8,7 @@ import {
   buildProgram,
   programMinutes,
   slotCost,
+  splitSlotKey,
   useStore,
   type Program,
 } from "@/lib/store";
@@ -37,14 +38,20 @@ const RING = 2 * Math.PI * 86;
 const mmss = (t: number) =>
   `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`;
 
-export default function ProgramTab() {
+export type TabTarget = "body" | "exercises" | "program";
+
+export default function ProgramTab({
+  onNavigate,
+}: {
+  onNavigate: (tab: TabTarget) => void;
+}) {
   const { programs, activeProgramId, openProgram } = useStore();
   const [openSlot, setOpenSlot] = useState<string | null>(null);
 
   const program = programs.find((p) => p.id === activeProgramId) ?? null;
   useEffect(() => setOpenSlot(null), [activeProgramId]);
 
-  if (!program) return <ProgramList />;
+  if (!program) return <ProgramList onNavigate={onNavigate} />;
   if (openSlot)
     return (
       <SlotDetail
@@ -64,8 +71,17 @@ export default function ProgramTab() {
 
 /* ── Уровень 1: список ────────────────────────────────────────────────────── */
 
-function ProgramList() {
-  const { programs, openProgram, addProgram, loads, restrictions } = useStore();
+function ProgramList({ onNavigate }: { onNavigate: (tab: TabTarget) => void }) {
+  const {
+    programs,
+    openProgram,
+    addProgram,
+    removeProgram,
+    duplicateProgram,
+    startPicker,
+    loads,
+    restrictions,
+  } = useStore();
   const [minutes, setMinutes] = useState(40);
   const [openSplit, setOpenSplit] = useState<string | null>(null);
   const [splitExercise, setSplitExercise] = useState<string | null>(null);
@@ -113,7 +129,9 @@ function ProgramList() {
             max={120}
             value={minutes}
             onChange={(e) =>
-              setMinutes(Math.min(120, Math.max(10, Number(e.target.value) || 10)))
+              setMinutes(
+                Math.min(120, Math.max(10, Number(e.target.value) || 10)),
+              )
             }
             aria-label="Длительность тренировки в минутах"
             className="w-20 rounded-pill border border-line bg-accent/[0.04] px-3 py-1.5 text-center text-sm text-bright outline-none focus:border-accent"
@@ -153,6 +171,40 @@ function ProgramList() {
         </p>
       </div>
 
+      {/* Своя тренировка из каталога */}
+      <div className="card p-5 sm:p-6">
+        <p className="kicker">Создать свою программу</p>
+        <p className="mt-3 text-[13px] leading-relaxed text-dim">
+          Откроется каталог в режиме выбора: отмечаете упражнения, задаёте
+          название и подтверждаете галочкой.
+        </p>
+        <button
+          onClick={() => {
+            startPicker();
+            onNavigate("exercises");
+          }}
+          className="btn mt-5 w-full"
+        >
+          Выбрать упражнения
+        </button>
+      </div>
+
+      {/* Собранные пользователем */}
+      <p className="kicker mt-2 px-1">Пользовательские тренировки</p>
+      {programs.some((p) => !p.builtIn) ? (
+        <ProgramCards
+          list={programs.filter((p) => !p.builtIn)}
+          openProgram={openProgram}
+          duplicateProgram={duplicateProgram}
+          removeProgram={removeProgram}
+        />
+      ) : (
+        <p className="card p-6 text-center text-sm text-dim">
+          Пока пусто — соберите тренировку под своё время или выберите
+          упражнения вручную
+        </p>
+      )}
+
       {/* Известные методики */}
       <p className="kicker px-1">Известные методики</p>
       <ul className="flex flex-col gap-2.5">
@@ -163,7 +215,8 @@ function ProgramList() {
               className="card reveal w-full p-5 text-left transition-colors hover:border-accent-dim"
               style={{ "--i": i } as React.CSSProperties}
             >
-              <div className="flex items-start justify-between gap-4">
+              <p className="author">GymBro</p>
+              <div className="mt-2 flex items-start justify-between gap-4">
                 <div className="min-w-0">
                   <p className="text-[15px] text-bright">{s.name}</p>
                   <p className="mt-1.5 text-xs text-dim">
@@ -198,19 +251,65 @@ function ProgramList() {
         и частоте — не на популярность.
       </p>
 
-      {/* Мои программы */}
-      <p className="kicker mt-2 px-1">Мои программы</p>
-      <ul className="flex flex-col gap-2.5">
-        {programs.map((p, i) => {
-          const muscles = [
-            ...new Set(p.slots.map((s) => exerciseById(s.exerciseId).primary)),
-          ];
-          return (
-            <li key={p.id}>
+      {/* Заготовки GymBro */}
+      <p className="kicker mt-2 px-1">Разовые тренировки</p>
+      <ProgramCards
+        list={programs.filter((p) => p.builtIn)}
+        openProgram={openProgram}
+        duplicateProgram={duplicateProgram}
+        removeProgram={removeProgram}
+      />
+    </div>
+  );
+}
+
+/* ── Карточки программ ────────────────────────────────────────────────────── */
+
+function ProgramCards({
+  list,
+  openProgram,
+  duplicateProgram,
+  removeProgram,
+}: {
+  list: Program[];
+  openProgram: (id: string | null) => void;
+  duplicateProgram: (id: string) => string | null;
+  removeProgram: (id: string) => void;
+}) {
+  return (
+    <ul className="flex flex-col gap-2.5">
+      {list.map((p, i) => {
+        const muscles = [
+          ...new Set(p.slots.map((s) => exerciseById(s.exerciseId).primary)),
+        ];
+        return (
+          <li key={p.id}>
+            <div
+              className="card card-lit reveal p-5"
+              style={{ "--i": i } as React.CSSProperties}
+            >
+              <div className="flex items-start justify-between gap-3">
+                {p.builtIn ? (
+                  <p className="author">GymBro</p>
+                ) : (
+                  <p className="text-[11px] text-dim">Ваша тренировка</p>
+                )}
+                {!p.builtIn && (
+                  <button
+                    onClick={() => removeProgram(p.id)}
+                    className="flex shrink-0 items-center gap-1.5 text-[11px] text-dim transition-colors hover:text-over"
+                  >
+                    <span aria-hidden className="text-base leading-none">
+                      ×
+                    </span>
+                    Удалить
+                  </button>
+                )}
+              </div>
+
               <button
                 onClick={() => openProgram(p.id)}
-                className="card card-lit reveal w-full p-5 text-left transition-colors hover:border-accent-dim"
-                style={{ "--i": i } as React.CSSProperties}
+                className="mt-3 w-full text-left"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
@@ -224,8 +323,11 @@ function ProgramList() {
                     <span className="ml-1 text-sm text-dim">мин</span>
                   </p>
                 </div>
-                <div className="mt-4 flex flex-wrap gap-1.5">
-                  {p.aiGenerated && <span className="chip">GymBro</span>}
+                <div className="mt-4 flex flex-wrap items-center gap-1.5">
+                  {p.builtIn && (
+                    <span className="chip">Частично изменяемая</span>
+                  )}
+                  <span className="chip">Оценка ИИ: {p.aiScore ?? "—"}</span>
                   {muscles.map((m) => (
                     <span key={m} className="chip">
                       {muscleNames[m]}
@@ -233,14 +335,28 @@ function ProgramList() {
                   ))}
                 </div>
                 {p.note && (
-                  <p className="mt-3 text-xs leading-relaxed text-dim">{p.note}</p>
+                  <p className="mt-3 text-xs leading-relaxed text-dim">
+                    {p.note}
+                  </p>
                 )}
               </button>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
+
+              <div className="mt-4 flex flex-wrap gap-1.5 border-t border-line pt-3">
+                <button
+                  onClick={() => {
+                    const copy = duplicateProgram(p.id);
+                    if (copy) openProgram(copy);
+                  }}
+                  className="chip-btn"
+                >
+                  Дублировать
+                </button>
+              </div>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
@@ -255,6 +371,9 @@ function SplitDetail({
   onBack: () => void;
   onOpenExercise: (id: string) => void;
 }) {
+  const { splitSwaps, swapSplitExercise } = useStore();
+  const [editing, setEditing] = useState<string | null>(null);
+
   const levelLabel =
     split.level === "novice"
       ? "Новичок"
@@ -264,12 +383,16 @@ function SplitDetail({
 
   return (
     <div className="flex flex-col gap-4">
-      <button onClick={onBack} className="btn-ghost self-start px-4 py-1.5 text-[12px]">
+      <button
+        onClick={onBack}
+        className="btn-ghost self-start px-4 py-1.5 text-[12px]"
+      >
         ← Все методики
       </button>
 
       <div className="card card-lit p-5 sm:p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
+        <p className="author">GymBro</p>
+        <div className="mt-2 flex flex-wrap items-start justify-between gap-4">
           <h2 className="font-serif text-3xl font-light leading-tight text-bright">
             {split.name}
           </h2>
@@ -310,15 +433,25 @@ function SplitDetail({
 
           <ul className="mt-4 flex flex-col gap-1.5">
             {day.exerciseIds.map((id, i) => {
-              const ex = exerciseById(id);
+              const key = splitSlotKey(split.id, day.name, id);
+              const ex = exerciseById(splitSwaps[key] ?? id);
+              const swapped = Boolean(splitSwaps[key]);
+              const isEditing = editing === key;
+              const alternatives = exercisesFor(ex.primary).filter(
+                (a) => a.id !== ex.id,
+              );
+
               return (
-                <li key={id}>
-                  <button
-                    onClick={() => onOpenExercise(id)}
-                    className="reveal flex w-full items-center justify-between gap-3 rounded-[12px] border border-line px-3.5 py-2.5 text-left transition-colors hover:border-accent-dim hover:bg-accent/6"
-                    style={{ "--i": di * 2 + i } as React.CSSProperties}
-                  >
-                    <span className="min-w-0">
+                <li
+                  key={id}
+                  className="reveal rounded-[12px] border border-line px-3.5 py-2.5"
+                  style={{ "--i": di * 2 + i } as React.CSSProperties}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <button
+                      onClick={() => onOpenExercise(ex.id)}
+                      className="min-w-0 text-left"
+                    >
                       <span className="block truncate text-[13px] text-bright">
                         {ex.name}
                       </span>
@@ -326,12 +459,60 @@ function SplitDetail({
                         {muscleNames[ex.primary]} ·{" "}
                         {difficultyLabels[ex.difficulty]} ·{" "}
                         {equipmentLabels[ex.equipment]}
+                        {swapped && " · заменено"}
                       </span>
-                    </span>
+                    </button>
                     <span className="shrink-0 font-serif text-base font-light text-accent">
                       {scoreLabel(ex)}
                     </span>
-                  </button>
+                  </div>
+
+                  <div className="mt-2.5 flex flex-wrap gap-1.5">
+                    <button
+                      onClick={() => setEditing(isEditing ? null : key)}
+                      aria-expanded={isEditing}
+                      className="chip-btn"
+                    >
+                      {isEditing ? "Отмена" : "Заменить"}
+                    </button>
+                    {swapped && (
+                      <button
+                        onClick={() => swapSplitExercise(key, id)}
+                        className="chip-btn"
+                      >
+                        Вернуть исходное
+                      </button>
+                    )}
+                  </div>
+
+                  {isEditing && (
+                    <ul className="mt-2.5 flex flex-col gap-1.5 border-t border-line pt-2.5">
+                      {alternatives.map((alt) => (
+                        <li key={alt.id}>
+                          <button
+                            onClick={() => {
+                              swapSplitExercise(key, alt.id);
+                              setEditing(null);
+                            }}
+                            className="flex w-full items-center justify-between gap-3 rounded-[10px] px-2.5 py-2 text-left transition-colors hover:bg-accent/6"
+                          >
+                            <span className="min-w-0">
+                              <span className="block truncate text-[12px] text-bright">
+                                {alt.name}
+                              </span>
+                              <span className="text-[10px] text-dim">
+                                {difficultyLabels[alt.difficulty]} ·{" "}
+                                {equipmentLabels[alt.equipment]}
+                              </span>
+                            </span>
+                            <span className="shrink-0 font-serif text-sm font-light text-accent">
+                              {scoreLabel(alt)}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </li>
               );
             })}
@@ -399,9 +580,16 @@ function ProgramBuilder({
     addSlot,
     removeSlot,
     moveSlot,
+    duplicateProgram,
+    removeProgram,
+    openProgram,
   } = useStore();
 
-  const [showWeek, setShowWeek] = useState(true);
+  // Стартовый пресет: показываем как есть, править нечего
+  const builtIn = program.builtIn === true;
+
+  // По умолчанию показываем саму тренировку, а не неделю вместе с ней
+  const [showWeek, setShowWeek] = useState(false);
   const [picker, setPicker] = useState<MuscleId | null>(null);
   const [restTotal, setRestTotal] = useState(0);
   const [restLeft, setRestLeft] = useState(0);
@@ -415,17 +603,17 @@ function ProgramBuilder({
   const sets = useMemo(() => programSets(program), [program]);
   const shown = useMemo(
     () => (showWeek ? withWeek(sets, loads) : sets),
-    [sets, loads, showWeek]
+    [sets, loads, showWeek],
   );
   // Одну тренировку сравниваем с долей недельного диапазона, неделю — целиком
   const scale = showWeek ? 1 : SESSION_SHARE;
   const fixes = useMemo(
     () => fixesFor(program, { avoid: restrictions, week: loads }),
-    [program, restrictions, loads]
+    [program, restrictions, loads],
   );
   const worked = useMemo(
     () => report(sets, SESSION_SHARE).filter((r) => r.sets > 0),
-    [sets]
+    [sets],
   );
 
   const used = programMinutes(program);
@@ -455,10 +643,38 @@ function ProgramBuilder({
 
       {/* Шапка: время и объём */}
       <div className="card card-lit p-5 sm:p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <h2 className="font-serif text-3xl font-light text-bright">
-            {program.name}
-          </h2>
+        <div className="flex items-start justify-between gap-3">
+          {builtIn ? (
+            <p className="author">GymBro</p>
+          ) : (
+            <p className="text-[11px] text-dim">Ваша тренировка</p>
+          )}
+          {!builtIn && (
+            <button
+              onClick={() => {
+                removeProgram(program.id);
+                onBack();
+              }}
+              className="flex shrink-0 items-center gap-1.5 text-[11px] text-dim transition-colors hover:text-over"
+            >
+              <span aria-hidden className="text-base leading-none">
+                ×
+              </span>
+              Удалить
+            </button>
+          )}
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h2 className="font-serif text-3xl font-light text-bright">
+              {program.name}
+            </h2>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {builtIn && <span className="chip">Частично изменяемая</span>}
+              <span className="chip">Оценка ИИ: {program.aiScore ?? "—"}</span>
+            </div>
+          </div>
           <div className="flex shrink-0 items-baseline gap-5">
             <p className="text-right">
               <span
@@ -481,25 +697,45 @@ function ProgramBuilder({
           </div>
         </div>
 
-        <input
-          type="range"
-          min={10}
-          max={120}
-          step={5}
-          value={program.targetMin}
-          onChange={(e) => setProgramDuration(program.id, Number(e.target.value))}
-          aria-label="Ориентир по времени"
-          className="mt-5 w-full accent-[var(--color-accent)]"
-        />
-        <p className="mt-2 text-[11px] text-dim">
-          {overTime
-            ? `Программа длиннее ориентира на ${used - program.targetMin} мин — снимите подходы или упражнение`
-            : `Свободно ещё ${program.targetMin - used} мин`}
+        {!builtIn && (
+          <input
+            type="range"
+            min={10}
+            max={120}
+            step={5}
+            value={program.targetMin}
+            onChange={(e) =>
+              setProgramDuration(program.id, Number(e.target.value))
+            }
+            aria-label="Ориентир по времени"
+            className="mt-5 w-full accent-[var(--color-accent)]"
+          />
+        )}
+        <p className="mt-2 text-[11px] leading-relaxed text-dim">
+          {builtIn
+            ? "Заготовка GymBro: упражнение можно заменить на другое для той же группы. Остальное — в копии."
+            : overTime
+              ? `Программа длиннее ориентира на ${used - program.targetMin} мин — снимите подходы или упражнение`
+              : `Свободно ещё ${program.targetMin - used} мин`}
         </p>
+
+        <div className="mt-4 flex flex-wrap gap-1.5">
+          <button
+            onClick={() => {
+              const copy = duplicateProgram(program.id);
+              if (copy) openProgram(copy);
+            }}
+            className="chip-btn"
+          >
+            Дублировать
+          </button>
+        </div>
 
         {program.note && (
           <div className="callout mt-5">
-            <p className="text-sm leading-relaxed text-bright">{program.note}</p>
+            <p className="text-sm leading-relaxed text-bright">
+              {program.note}
+            </p>
           </div>
         )}
       </div>
@@ -586,7 +822,7 @@ function ProgramBuilder({
           <div className="card card-lit p-5">
             <div className="flex items-baseline justify-between gap-3">
               <p className="kicker">Что поправить</p>
-              {fixes.length > 1 && (
+              {!builtIn && fixes.length > 1 && (
                 <button
                   onClick={() => fixes.forEach(applyFix)}
                   className="btn-ghost px-3.5 py-1 text-[11px]"
@@ -617,12 +853,18 @@ function ProgramBuilder({
                         {f.text}
                       </p>
                     </div>
-                    <button
-                      onClick={() => applyFix(f)}
-                      className="btn-ghost shrink-0 px-3.5 py-1 text-[11px]"
-                    >
-                      {f.kind === "add" ? `+${f.sets}` : `−${f.sets}`}
-                    </button>
+                    {builtIn ? (
+                      <span className="shrink-0 text-[11px] text-dim">
+                        {f.kind === "add" ? `+${f.sets}` : `−${f.sets}`}
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => applyFix(f)}
+                        className="btn-ghost shrink-0 px-3.5 py-1 text-[11px]"
+                      >
+                        {f.kind === "add" ? `+${f.sets}` : `−${f.sets}`}
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -637,7 +879,9 @@ function ProgramBuilder({
           <div className="card p-5">
             <div className="flex items-baseline justify-between gap-3">
               <p className="kicker">Упражнения</p>
-              <p className="text-[11px] text-dim">{program.slots.length} в списке</p>
+              <p className="text-[11px] text-dim">
+                {program.slots.length} в списке
+              </p>
             </div>
 
             <ul className="mt-4 flex flex-col gap-2">
@@ -662,119 +906,143 @@ function ProgramBuilder({
                           {s.rest} с · ≈{Math.round(slotCost(s))} мин
                         </span>
                       </button>
-                      <SetStepper
-                        value={s.sets}
-                        label={`Подходы, ${ex.name}`}
-                        onChange={(v) => setSlotSets(program.id, s.key, v)}
-                      />
+                      {builtIn ? (
+                        <span className="shrink-0 font-serif text-lg font-light text-bright">
+                          {s.sets}
+                          <span className="ml-1 text-[11px] text-dim">
+                            подхода
+                          </span>
+                        </span>
+                      ) : (
+                        <SetStepper
+                          value={s.sets}
+                          label={`Подходы, ${ex.name}`}
+                          onChange={(v) => setSlotSets(program.id, s.key, v)}
+                        />
+                      )}
                     </div>
 
                     <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                      <button
-                        onClick={() => moveSlot(program.id, s.key, -1)}
-                        disabled={i === 0}
-                        aria-label="Выше"
-                        className="chip-btn"
-                      >
-                        ↑
-                      </button>
-                      <button
-                        onClick={() => moveSlot(program.id, s.key, 1)}
-                        disabled={i === program.slots.length - 1}
-                        aria-label="Ниже"
-                        className="chip-btn"
-                      >
-                        ↓
-                      </button>
-                      <button
-                        onClick={() => onOpenSlot(s.key)}
-                        className="chip-btn"
-                      >
-                        Заменить
-                      </button>
-                      <button
-                        onClick={() => removeSlot(program.id, s.key)}
-                        className="chip-btn"
-                      >
-                        Убрать
-                      </button>
+                      {builtIn ? (
+                        <button
+                          onClick={() => onOpenSlot(s.key)}
+                          className="chip-btn"
+                        >
+                          Заменить
+                        </button>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => moveSlot(program.id, s.key, -1)}
+                            disabled={i === 0}
+                            aria-label="Выше"
+                            className="chip-btn"
+                          >
+                            ↑
+                          </button>
+                          <button
+                            onClick={() => moveSlot(program.id, s.key, 1)}
+                            disabled={i === program.slots.length - 1}
+                            aria-label="Ниже"
+                            className="chip-btn"
+                          >
+                            ↓
+                          </button>
+                          <button
+                            onClick={() => onOpenSlot(s.key)}
+                            className="chip-btn"
+                          >
+                            Заменить
+                          </button>
+                          <button
+                            onClick={() => removeSlot(program.id, s.key)}
+                            className="chip-btn"
+                          >
+                            Убрать
+                          </button>
+                        </>
+                      )}
                     </div>
                   </li>
                 );
               })}
               {program.slots.length === 0 && (
                 <li className="rounded-[14px] border border-line p-6 text-center text-sm text-dim">
-                  Пусто — добавьте упражнение ниже
+                  {builtIn
+                    ? "В программе нет упражнений"
+                    : "Пусто — добавьте упражнение ниже"}
                 </li>
               )}
             </ul>
           </div>
 
           {/* Добавление */}
-          <div className="card p-5">
-            <p className="kicker">Добавить на группу</p>
-            <div className="mt-4 flex flex-wrap gap-1.5">
-              {report(withWeek(sets, loads)).map((r) => (
-                <button
-                  key={r.muscleId}
-                  onClick={() =>
-                    setPicker(picker === r.muscleId ? null : r.muscleId)
-                  }
-                  aria-pressed={picker === r.muscleId}
-                  className={`rounded-pill border px-3 py-1 text-[11px] transition-colors ${
-                    picker === r.muscleId
-                      ? "border-accent bg-accent/12 text-accent-hi"
-                      : "border-line text-dim hover:border-accent-dim hover:text-accent"
-                  }`}
-                >
-                  {muscleNames[r.muscleId]}
-                  <span className="ml-1.5 text-dim/70">{r.sets}</span>
-                </button>
-              ))}
-            </div>
+          {!builtIn && (
+            <div className="card p-5">
+              <p className="kicker">Добавить на группу</p>
+              <div className="mt-4 flex flex-wrap gap-1.5">
+                {report(withWeek(sets, loads)).map((r) => (
+                  <button
+                    key={r.muscleId}
+                    onClick={() =>
+                      setPicker(picker === r.muscleId ? null : r.muscleId)
+                    }
+                    aria-pressed={picker === r.muscleId}
+                    className={`rounded-pill border px-3 py-1 text-[11px] transition-colors ${
+                      picker === r.muscleId
+                        ? "border-accent bg-accent/12 text-accent-hi"
+                        : "border-line text-dim hover:border-accent-dim hover:text-accent"
+                    }`}
+                  >
+                    {muscleNames[r.muscleId]}
+                    <span className="ml-1.5 text-dim/70">{r.sets}</span>
+                  </button>
+                ))}
+              </div>
 
-            {picker && (
-              <>
-                <p className="mt-4 text-[11px] text-dim">
-                  Рабочий диапазон за неделю: {landmarks[picker].mavLow}–
-                  {landmarks[picker].mavHigh} подходов, потолок{" "}
-                  {landmarks[picker].mrv}
-                </p>
-                <ul className="mt-3 flex flex-col gap-1.5">
-                  {candidatesFor(program, picker).map((e) => (
-                    <li key={e.id}>
-                      <button
-                        onClick={() => {
-                          addSlot(program.id, e.id, 3);
-                          setPicker(null);
-                        }}
-                        className="flex w-full items-center justify-between gap-3 rounded-[12px] border border-line px-3.5 py-2.5 text-left transition-colors hover:border-accent-dim hover:bg-accent/6"
-                      >
-                        <span className="min-w-0">
-                          <span className="block truncate text-[13px] text-bright">
-                            {e.name}
+              {picker && (
+                <>
+                  <p className="mt-4 text-[11px] text-dim">
+                    Рабочий диапазон за неделю: {landmarks[picker].mavLow}–
+                    {landmarks[picker].mavHigh} подходов, потолок{" "}
+                    {landmarks[picker].mrv}
+                  </p>
+                  <ul className="mt-3 flex flex-col gap-1.5">
+                    {candidatesFor(program, picker).map((e) => (
+                      <li key={e.id}>
+                        <button
+                          onClick={() => {
+                            addSlot(program.id, e.id, 3);
+                            setPicker(null);
+                          }}
+                          className="flex w-full items-center justify-between gap-3 rounded-[12px] border border-line px-3.5 py-2.5 text-left transition-colors hover:border-accent-dim hover:bg-accent/6"
+                        >
+                          <span className="min-w-0">
+                            <span className="block truncate text-[13px] text-bright">
+                              {e.name}
+                            </span>
+                            <span className="text-[10px] text-dim">
+                              {evidenceLabels[e.evidence]} ·{" "}
+                              {difficultyLabels[e.difficulty]} ·{" "}
+                              {equipmentLabels[e.equipment]}
+                            </span>
                           </span>
-                          <span className="text-[10px] text-dim">
-                            {evidenceLabels[e.evidence]} ·{" "}
-                            {difficultyLabels[e.difficulty]} ·{" "}
-                            {equipmentLabels[e.equipment]}
+                          <span className="font-serif text-base font-light text-accent">
+                            {scoreLabel(e)}
                           </span>
-                        </span>
-                        <span className="font-serif text-base font-light text-accent">
-                          {scoreLabel(e)}
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                  {candidatesFor(program, picker).length === 0 && (
-                    <li className="text-sm text-dim">
-                      Все упражнения этой группы уже в программе
-                    </li>
-                  )}
-                </ul>
-              </>
-            )}
-          </div>
+                        </button>
+                      </li>
+                    ))}
+                    {candidatesFor(program, picker).length === 0 && (
+                      <li className="text-sm text-dim">
+                        Все упражнения этой группы уже в программе
+                      </li>
+                    )}
+                  </ul>
+                </>
+              )}
+            </div>
+          )}
 
           {/* Таймер отдыха */}
           <div className="card card-lit flex flex-col items-center p-6">
@@ -855,17 +1123,21 @@ function SlotDetail({
 }) {
   const { swapExercise, logSet } = useStore();
   const [logged, setLogged] = useState(0);
+  const builtIn = program.builtIn === true;
 
   const slot = program.slots.find((s) => s.key === slotKey)!;
   const ex = exerciseById(slot.exerciseId);
   const alternatives = useMemo(
     () => exercisesFor(ex.primary).filter((a) => a.id !== ex.id),
-    [ex]
+    [ex],
   );
 
   return (
     <div className="flex flex-col gap-4">
-      <button onClick={onBack} className="btn-ghost self-start px-4 py-1.5 text-[12px]">
+      <button
+        onClick={onBack}
+        className="btn-ghost self-start px-4 py-1.5 text-[12px]"
+      >
         ← {program.name}
       </button>
 

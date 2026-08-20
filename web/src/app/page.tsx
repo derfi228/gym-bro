@@ -53,7 +53,9 @@ function Shell() {
           </p>
           <div className="flex items-center gap-1.5 text-accent">
             <FlameIcon className="h-4 w-4" />
-            <span className="font-serif text-lg font-light leading-none">7</span>
+            <span className="font-serif text-lg font-light leading-none">
+              7
+            </span>
           </div>
         </div>
       </header>
@@ -61,8 +63,8 @@ function Shell() {
       {/* Содержимое вкладки */}
       <main className="mx-auto w-full max-w-4xl flex-1 px-4 pt-5 pb-32 sm:px-5">
         {tab === "body" && <BodyTab />}
-        {tab === "exercises" && <ExercisesTab />}
-        {tab === "program" && <ProgramTab />}
+        {tab === "exercises" && <ExercisesTab onNavigate={setTab} />}
+        {tab === "program" && <ProgramTab onNavigate={setTab} />}
         {tab === "gymbro" && <GymBroTab onNavigate={setTab} />}
         {tab === "challenges" && <ChallengesTab />}
       </main>

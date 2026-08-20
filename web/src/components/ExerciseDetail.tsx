@@ -60,8 +60,10 @@ export default function ExerciseDetail({
   /** Дополнительный блок: подходы, замена, отметка — зависит от вкладки */
   children?: React.ReactNode;
 }) {
-  const { weights, setWeight } = useStore();
+  const { weights, setWeight, programs, addSlot } = useStore();
   const [view, setView] = useState<BodyView>(() => viewOf(exercise.primary));
+  const [target, setTarget] = useState<string | null>(null);
+  const [added, setAdded] = useState<string | null>(null);
 
   const w = weights[exercise.id] ?? {};
 
@@ -69,15 +71,28 @@ export default function ExerciseDetail({
   const involved = useMemo(
     () =>
       (Object.entries(exercise.involvement) as [MuscleId, number][]).sort(
-        (a, b) => b[1] - a[1]
+        (a, b) => b[1] - a[1],
       ),
-    [exercise]
+    [exercise],
+  );
+
+  // В каких программах упражнение уже стоит
+  const usedIn = useMemo(
+    () =>
+      programs.filter((p) => p.slots.some((s) => s.exerciseId === exercise.id)),
+    [programs, exercise.id],
+  );
+
+  // Добавлять можно только в редактируемые программы
+  const editable = useMemo(
+    () => programs.filter((p) => !p.builtIn),
+    [programs],
   );
 
   // Есть ли задействованные мышцы на обратной стороне
   const otherView: BodyView = view === "front" ? "back" : "front";
   const hiddenCount = involved.filter(
-    ([id]) => id in shapesFor(otherView) && !(id in shapesFor(view))
+    ([id]) => id in shapesFor(otherView) && !(id in shapesFor(view)),
   ).length;
 
   return (
@@ -94,7 +109,9 @@ export default function ExerciseDetail({
               <span className="chip">
                 {difficultyLabels[exercise.difficulty]}
               </span>
-              <span className="chip">{equipmentLabels[exercise.equipment]}</span>
+              <span className="chip">
+                {equipmentLabels[exercise.equipment]}
+              </span>
             </div>
           </div>
           <p className="shrink-0 font-serif text-4xl font-light text-accent">
@@ -112,6 +129,81 @@ export default function ExerciseDetail({
               {exercise.note}
             </p>
           </div>
+        )}
+      </div>
+
+      {/* Где уже используется */}
+      <div className="card p-5 sm:p-6">
+        <p className="kicker">В программах</p>
+        {usedIn.length === 0 ? (
+          <p className="mt-3 text-sm text-dim">
+            Пока не добавлено ни в одну программу
+          </p>
+        ) : (
+          <ul className="mt-3 flex flex-wrap gap-1.5">
+            {usedIn.map((p) => (
+              <li key={p.id} className="chip">
+                {p.name}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* Добавление в программу */}
+      <div className="card p-5 sm:p-6">
+        <p className="kicker">Добавить в программу</p>
+
+        {editable.length === 0 ? (
+          <p className="mt-3 text-sm leading-relaxed text-dim">
+            Своих тренировок пока нет. Заготовки GymBro нельзя дополнять —
+            сделайте копию или соберите тренировку во вкладке «Программа».
+          </p>
+        ) : (
+          <>
+            <ul className="mt-3 flex flex-wrap gap-1.5">
+              {editable.map((p) => (
+                <li key={p.id}>
+                  <button
+                    onClick={() => {
+                      setTarget(target === p.id ? null : p.id);
+                      setAdded(null);
+                    }}
+                    aria-pressed={target === p.id}
+                    className={`rounded-pill border px-3 py-1 text-[11px] transition-colors ${
+                      target === p.id
+                        ? "border-accent bg-accent/12 text-accent-hi"
+                        : "border-line text-dim hover:border-accent-dim hover:text-accent"
+                    }`}
+                  >
+                    {p.name}
+                  </button>
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <button
+                onClick={() => {
+                  if (!target) return;
+                  addSlot(target, exercise.id, 3);
+                  setAdded(target);
+                  setTarget(null);
+                }}
+                disabled={!target}
+                className="btn disabled:cursor-default disabled:opacity-40"
+              >
+                Добавить в программу
+              </button>
+              <p className="text-xs text-dim">
+                {added
+                  ? `Добавлено в «${programs.find((p) => p.id === added)?.name ?? ""}», 3 подхода`
+                  : target
+                    ? "3 подхода, отдых по сложности упражнения"
+                    : "Выберите программу"}
+              </p>
+            </div>
+          </>
         )}
       </div>
 

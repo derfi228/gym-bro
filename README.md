@@ -173,8 +173,8 @@ cd mobile && npm install && npx expo start
 | Трицепс | [ACE, 2011](https://www.acefitness.org/certifiednewsarticle/3008/ace-study-identifies-best-triceps-exercises/) |
 | Бицепс | [ACE, 2014](https://www.acefitness.org/continuing-education/prosource/august-2014/4933/ace-study-reveals-best-biceps-exercises/) |
 | Плечи | [ACE, 2014](https://www.acefitness.org/continuing-education/prosource/september-2014/4972/dynamite-delts-ace-research-identifies-top-shoulder-exercises/) |
-| Пресс | [ACE / San Diego State, 2001](https://www.acefitness.org/about-ace/press-room/in-the-news/246/american-council-on-exercise-ace-sponsored-study-reveals-best-and-worst-abdominal-exercises/) |
-| Спина | [Edelburg, UW–La Crosse](https://minds.wisc.edu/handle/1793/76924) |
+| Пресс | [ACE / San Diego State, 2001](https://www.acefitness.org/getfit/studies/bestworstabexercises.pdf) — % активности прямой мышцы от классических скручиваний |
+| Спина | [Edelburg, UW–La Crosse](https://minds.wisc.edu/handle/1793/76924) — таблица 4, средний %MVC широчайшей |
 | Трапеции | [JOSPT, 2003](https://www.jospt.org/doi/10.2519/jospt.2003.33.5.247) |
 | Ягодицы | [Contreras и др., 2015](https://pubmed.ncbi.nlm.nih.gov/26214739/), [хроническое сравнение](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10593473/) |
 | Бицепс бедра | [J Appl Physiol, 2025](https://journals.physiology.org/doi/full/10.1152/japplphysiol.00237.2025), [PMC5765783](https://pmc.ncbi.nlm.nih.gov/articles/PMC5765783/) |
@@ -193,6 +193,18 @@ cd mobile && npm install && npx expo start
 [react-native-body-highlighter](https://github.com/HichamELBSI/react-native-body-highlighter)
 (MIT, © 2022 ELABBASSI Hicham), переразмечены под наши группы. Условия лицензии
 в `web/src/lib/NOTICE-body-highlighter.txt` — файл не удалять.
+
+### Что означает число
+
+`emgPercent` — процент от лучшего упражнения **того же исследования для той же
+мышцы**. Нормировка своя у каждой группы, поэтому 100 у жима лёжа и 100 у
+подтягиваний — это разные эксперименты, а не общая шкала.
+
+Проценты есть у 26 упражнений из 62: грудь, трицепс, спина и пресс. У
+остальных в интерфейсе честно написано «нет данных» — их исследования либо
+опубликовали только порядок без чисел (бицепс и плечи у ACE выложены графиком),
+либо сравнительного исследования под наш набор упражнений не нашлось. Числа из
+рангов не выводим: место внутри одного исследования не переводится в проценты.
 
 Ограничение метода: ЭМГ измеряет активацию мышцы в моменте и не является
 подтверждённым предиктором гипертрофии —
@@ -258,6 +270,22 @@ git reset --hard v1.0
 ```
 
 ## Журнал изменений
+
+### 2026-08-22 — Проверенные проценты вместо рангов
+Из каталога убраны подписи «№N»: место внутри одного исследования нельзя
+сравнивать с местом из другого, а в общем списке они стояли рядом.
+
+Для спины и пресса найдены и проставлены измеренные значения: таблица 4
+диссертации Edelburg (средний %MVC широчайшей, нормировано к подтягиваниям)
+и таблица ACE/SDSU 2001 (% активности прямой мышцы, нормировано к велосипеду).
+Упражнений с проверенным числом стало 26 из 62 вместо 15.
+
+Скручивания на блоке больше не ссылаются на исследование ACE — их там не
+тестировали.
+
+В карточке появились две шкалы: активация синяя, сложность янтарная. Шкала
+активации подписана целевой мышцей — под фильтром по вспомогательной группе
+процент читался как её активация, хотя относится к целевой.
 
 ### 2026-08-20 — Оформление
 Текст переведён на Manrope: системный стек спорил с серифом в заголовках.

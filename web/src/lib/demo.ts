@@ -39,12 +39,12 @@ export const sources: Record<string, StudySource> = {
   "ace-abs": {
     id: "ace-abs",
     label: "ACE, пресс",
-    note: "ACE / San Diego State Univ., 2001. Порядок из 13 упражнений",
+    note: "ACE / San Diego State Univ., 2001. % активности прямой мышцы живота, нормировано к велосипеду",
   },
   "uwl-back": {
     id: "uwl-back",
     label: "UW–La Crosse, спина",
-    note: "Edelburg, UW–La Crosse. 8 упражнений на спину, ЭМГ широчайшей и трапеции",
+    note: "Edelburg, UW–La Crosse. Средний %MVC широчайшей, нормировано к подтягиваниям",
   },
   "jospt-traps": {
     id: "jospt-traps",
@@ -245,9 +245,8 @@ export const demoExercises: Exercise[] = [
     involvement: { back: 1, biceps: 0.6, forearms: 0.5, traps: 0.35 },
     description:
       "Хват чуть шире плеч. Тянитесь грудью к перекладине, а не подбородком: плечи вниз и назад, лопатки сводятся в верхней точке. Внизу руки распрямляются полностью.",
-    emgPercent: null,
-    rank: 1,
-    evidence: "ranking",
+    emgPercent: 100,
+    evidence: "emg",
     sourceId: "uwl-back",
     difficulty: "high",
     equipment: "bodyweight",
@@ -261,9 +260,8 @@ export const demoExercises: Exercise[] = [
     involvement: { back: 0.95, biceps: 0.8, forearms: 0.5 },
     description:
       "Ладони к себе, хват на ширине плеч. Бицепс включается сильнее, чем при прямом хвате, поэтому упражнение засчитывается и в объём рук.",
-    emgPercent: null,
-    rank: 2,
-    evidence: "ranking",
+    emgPercent: 97,
+    evidence: "emg",
     sourceId: "uwl-back",
     difficulty: "medium",
     equipment: "bodyweight",
@@ -276,9 +274,8 @@ export const demoExercises: Exercise[] = [
     involvement: { back: 0.85, biceps: 0.5, traps: 0.6, forearms: 0.4 },
     description:
       "Корпус наклонён примерно до 45°, спина прямая, колени мягкие. Штанга тянется к низу живота, локти скользят вдоль корпуса.",
-    emgPercent: null,
-    rank: 3,
-    evidence: "ranking",
+    emgPercent: 84,
+    evidence: "emg",
     sourceId: "uwl-back",
     difficulty: "high",
     equipment: "barbell",
@@ -292,9 +289,8 @@ export const demoExercises: Exercise[] = [
     involvement: { back: 0.8, biceps: 0.55, forearms: 0.35 },
     description:
       "Рукоять к верху груди, корпус отклонён назад не больше чем на 15°. Начинайте движение с опускания плеч, а не со сгибания рук.",
-    emgPercent: null,
-    rank: 4,
-    evidence: "ranking",
+    emgPercent: 81,
+    evidence: "emg",
     sourceId: "uwl-back",
     difficulty: "low",
     equipment: "cable",
@@ -308,9 +304,8 @@ export const demoExercises: Exercise[] = [
     involvement: { back: 0.78, biceps: 0.5, traps: 0.6 },
     description:
       "Спина прямая, тяга к низу живота, лопатки сводятся в конце движения. Корпус не раскачивается.",
-    emgPercent: null,
-    rank: 5,
-    evidence: "ranking",
+    emgPercent: 83,
+    evidence: "emg",
     sourceId: "uwl-back",
     difficulty: "low",
     equipment: "cable",
@@ -323,9 +318,8 @@ export const demoExercises: Exercise[] = [
     involvement: { back: 0.72, biceps: 0.5, traps: 0.55, abs: 0.35 },
     description:
       "Тело прямое под грифом на уровне пояса, тяга грудью к перекладине. Чем горизонтальнее корпус, тем тяжелее.",
-    emgPercent: null,
-    rank: 6,
-    evidence: "ranking",
+    emgPercent: 77,
+    evidence: "emg",
     sourceId: "uwl-back",
     difficulty: "low",
     equipment: "bodyweight",
@@ -679,9 +673,8 @@ export const demoExercises: Exercise[] = [
     involvement: { abs: 1, obliques: 0.85 },
     description:
       "Лёжа, поочерёдно тянитесь локтем к противоположному колену, вторая нога выпрямляется. Поясница прижата к полу, движение медленное.",
-    emgPercent: null,
-    rank: 1,
-    evidence: "ranking",
+    emgPercent: 100,
+    evidence: "emg",
     sourceId: "ace-abs",
     difficulty: "low",
     equipment: "bodyweight",
@@ -695,9 +688,8 @@ export const demoExercises: Exercise[] = [
     involvement: { abs: 0.92, obliques: 0.6, forearms: 0.3 },
     description:
       "В упоре на локтях подъём коленей к груди со скручиванием таза. Без раскачки: поднимаетесь прессом, а не инерцией.",
-    emgPercent: null,
-    rank: 2,
-    evidence: "ranking",
+    emgPercent: 85,
+    evidence: "emg",
     sourceId: "ace-abs",
     difficulty: "medium",
     equipment: "bodyweight",
@@ -710,9 +702,8 @@ export const demoExercises: Exercise[] = [
     involvement: { abs: 0.85, obliques: 0.35 },
     description:
       "Поясница на мяче, амплитуда больше, чем на полу: корпус сначала прогибается назад, затем скручивается.",
-    emgPercent: null,
-    rank: 3,
-    evidence: "ranking",
+    emgPercent: 56,
+    evidence: "emg",
     sourceId: "ace-abs",
     difficulty: "low",
     equipment: "bodyweight",
@@ -726,12 +717,11 @@ export const demoExercises: Exercise[] = [
     description:
       "Стоя на коленях у блока, скручивание корпуса вниз за счёт пресса. Таз неподвижен, тянут не руки, а живот.",
     emgPercent: null,
-    rank: 5,
-    evidence: "ranking",
-    sourceId: "ace-abs",
+    evidence: "estimate",
+    sourceId: "estimate",
     difficulty: "low",
     equipment: "cable",
-    note: "Единственный вариант, где прессу можно осмысленно добавлять вес",
+    note: "В сравнительное исследование ACE не входило — там тестировали 13 других упражнений. Единственный вариант, где прессу можно осмысленно добавлять вес",
   },
   {
     id: "reverse-crunch",
@@ -741,9 +731,8 @@ export const demoExercises: Exercise[] = [
     involvement: { abs: 0.75, obliques: 0.4 },
     description:
       "Лёжа, колени подтягиваются к груди с отрывом таза от пола. Ноги не раскачиваются.",
-    emgPercent: null,
-    rank: 7,
-    evidence: "ranking",
+    emgPercent: 44,
+    evidence: "emg",
     sourceId: "ace-abs",
     difficulty: "low",
     equipment: "bodyweight",
@@ -756,9 +745,8 @@ export const demoExercises: Exercise[] = [
     involvement: { abs: 0.55, obliques: 0.45, delts: 0.2 },
     description:
       "Упор на локтях, тело прямой линией. Таз не проваливается и не задирается, ягодицы и пресс напряжены.",
-    emgPercent: null,
-    rank: 10,
-    evidence: "ranking",
+    emgPercent: 40,
+    evidence: "emg",
     sourceId: "ace-abs",
     difficulty: "low",
     equipment: "bodyweight",
@@ -1403,9 +1391,15 @@ export function exerciseById(id: string): Exercise {
   return found;
 }
 
-/** Подпись значения: «100», «№1» или «—» */
+/**
+ * Подпись эффективности. Только измеренный процент ЭМГ; ранг из исследования
+ * не показываем — место внутри одного исследования нельзя сравнивать с местом
+ * из другого, а в общем списке они стояли рядом.
+ */
 export function scoreLabel(e: Exercise): string {
-  if (e.emgPercent !== null) return String(e.emgPercent);
-  if (e.rank) return `№${e.rank}`;
-  return "—";
+  return e.emgPercent !== null ? String(e.emgPercent) : "—";
 }
+
+/** Сложность на шкале 0..100 — чтобы рисовать полосой */
+export const difficultyPercent = (e: Exercise) =>
+  ({ low: 34, medium: 67, high: 100 })[e.difficulty];

@@ -354,6 +354,12 @@ h3 {
     background: rgb(var(--accent-rgb) / 0.12);
     overflow: hidden;
   }
+  /* Сложность — тёплая шкала: другой цвет, чтобы не путать с активацией */
+  .meter.meter-warm > span {
+    background: linear-gradient(90deg, #8a5f28, var(--color-warm));
+    box-shadow: 0 0 8px -1px rgb(var(--warm-rgb) / 0.6);
+  }
+
   .meter > span {
     display: block;
     height: 100%;

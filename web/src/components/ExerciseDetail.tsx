@@ -6,6 +6,7 @@ import MuscleFigure, { shapesFor, viewOf } from "@/components/MuscleFigure";
 import { RotateIcon } from "@/components/icons";
 import {
   difficultyLabels,
+  difficultyPercent,
   equipmentLabels,
   evidenceLabels,
   muscleNames,
@@ -114,9 +115,38 @@ export default function ExerciseDetail({
               </span>
             </div>
           </div>
-          <p className="shrink-0 font-serif text-4xl font-light text-accent">
-            {scoreLabel(exercise)}
-          </p>
+          {exercise.emgPercent !== null && (
+            <p className="shrink-0 font-serif text-4xl font-light text-accent">
+              {scoreLabel(exercise)}
+            </p>
+          )}
+        </div>
+
+        <div className="mt-5 flex flex-col gap-2.5">
+          <div className="flex items-center gap-3">
+            <span className="w-32 shrink-0 text-[11px] text-dim">
+              Активация · {muscleNames[exercise.primary].toLowerCase()}
+            </span>
+            <span className="meter flex-1">
+              {exercise.emgPercent !== null && (
+                <span style={{ width: `${exercise.emgPercent}%` }} />
+              )}
+            </span>
+            <span className="w-20 shrink-0 text-right text-[11px] text-dim">
+              {exercise.emgPercent !== null
+                ? `${exercise.emgPercent} %`
+                : "нет данных"}
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="w-32 shrink-0 text-[11px] text-dim">Сложность</span>
+            <span className="meter meter-warm flex-1">
+              <span style={{ width: `${difficultyPercent(exercise)}%` }} />
+            </span>
+            <span className="w-20 shrink-0 text-right text-[11px] text-warm">
+              {difficultyLabels[exercise.difficulty]}
+            </span>
+          </div>
         </div>
 
         <p className="mt-5 text-sm leading-relaxed text-bright">

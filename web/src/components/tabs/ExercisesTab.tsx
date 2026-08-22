@@ -10,6 +10,7 @@ import {
   evidenceLabels,
   exerciseById,
   muscleNames,
+  difficultyPercent,
   orderKey,
   scoreLabel,
 } from "@/lib/demo";
@@ -31,6 +32,37 @@ const pill = (active: boolean) =>
       ? "border-accent bg-accent/12 text-accent-hi"
       : "border-line text-dim hover:border-accent-dim hover:text-accent"
   }`;
+
+/** Одна шкала: подпись, полоса, значение справа */
+function Scale({
+  label,
+  percent,
+  value,
+  warm = false,
+}: {
+  label: string;
+  percent: number | null;
+  value: string;
+  warm?: boolean;
+}) {
+  return (
+    <span className="flex items-center gap-2.5">
+      <span className="w-32 shrink-0 truncate text-[10px] tracking-wide text-dim">
+        {label}
+      </span>
+      <span className={`meter flex-1 ${warm ? "meter-warm" : ""}`}>
+        {percent !== null && <span style={{ width: `${percent}%` }} />}
+      </span>
+      <span
+        className={`w-16 shrink-0 text-right text-[10px] ${
+          warm ? "text-warm" : "text-dim"
+        }`}
+      >
+        {value}
+      </span>
+    </span>
+  );
+}
 
 export default function ExercisesTab({
   onNavigate,
@@ -260,23 +292,32 @@ export default function ExercisesTab({
                     )}
                     {ex.name}
                   </span>
-                  <span className="shrink-0 font-serif text-2xl font-light text-accent">
-                    {scoreLabel(ex)}
-                  </span>
+                  {ex.emgPercent !== null && (
+                    <span className="shrink-0 font-serif text-2xl font-light text-accent">
+                      {scoreLabel(ex)}
+                    </span>
+                  )}
                 </div>
 
-                {ex.emgPercent !== null && (
-                  <div className="meter mt-3">
-                    <span style={{ width: `${ex.emgPercent}%` }} />
-                  </div>
-                )}
+                <span className="mt-3.5 flex flex-col gap-2">
+                  <Scale
+                    label={`Активация · ${muscleNames[ex.primary].toLowerCase()}`}
+                    percent={ex.emgPercent}
+                    value={
+                      ex.emgPercent !== null ? `${ex.emgPercent} %` : "нет данных"
+                    }
+                  />
+                  <Scale
+                    warm
+                    label="Сложность"
+                    percent={difficultyPercent(ex)}
+                    value={difficultyLabels[ex.difficulty]}
+                  />
+                </span>
 
-                <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                <div className="mt-3.5 flex flex-wrap items-center gap-1.5">
                   <span className="chip">{muscleNames[ex.primary]}</span>
                   <span className="chip">{evidenceLabels[ex.evidence]}</span>
-                  <span className="chip">
-                    {difficultyLabels[ex.difficulty]}
-                  </span>
                   <span className="chip">{equipmentLabels[ex.equipment]}</span>
                 </div>
 

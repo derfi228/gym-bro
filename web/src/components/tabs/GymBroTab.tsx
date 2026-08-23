@@ -202,9 +202,18 @@ export default function GymBroTab({
       return `Собрана программа на ${programMinutes(p)} мин из ${p.slots.length} упражнений: ${names}. Человек видит кнопку, чтобы её открыть.`;
     },
     showOnBody: (muscles) => {
+      // Вкладку не переключаем: разговор живёт в этой вкладке и при уходе
+      // пропадёт. Группу выбираем, а перейти предлагаем кнопкой
       selectMuscle(muscles[0]);
-      onNavigate("body");
-      return `Открыл схему тела на группе «${muscleNames[muscles[0]]}».`;
+      setThread((t) => [
+        ...t,
+        {
+          role: "bot",
+          text: `Открыл на схеме: ${muscles.map((m) => muscleNames[m]).join(", ")}.`,
+          cta: { label: "Посмотреть на схеме", run: () => onNavigate("body") },
+        },
+      ]);
+      return `Схема тела переключена на «${muscleNames[muscles[0]]}». Человек видит кнопку, чтобы перейти.`;
     },
   };
 
@@ -212,6 +221,16 @@ export default function GymBroTab({
    * Круг разговора: спросили — модель могла попросить действие — выполнили и
    * спросили снова. Больше трёх кругов не даём: дальше это обычно петля.
    */
+  function resetChat() {
+    history.current = [];
+    setThread([
+      {
+        role: "bot",
+        text: "Начали заново. Спрашивайте.",
+      },
+    ]);
+  }
+
   async function send(text: string) {
     const question = text.trim();
     if (question === "" || busy) return;
@@ -225,6 +244,8 @@ export default function GymBroTab({
 
       if ("error" in res) {
         setThread((t) => [...t, { role: "bot", text: res.error }]);
+        // Упёрлись в потолок длины — иначе следующий вопрос тоже не пройдёт
+        if (res.error.includes("слишком длинный")) history.current = [];
         break;
       }
 
@@ -322,6 +343,16 @@ export default function GymBroTab({
             className="btn shrink-0 px-5 py-2.5 text-[12px] disabled:cursor-default disabled:opacity-40"
           >
             Спросить
+          </button>
+          <button
+            type="button"
+            onClick={resetChat}
+            disabled={busy || thread.length <= 1}
+            aria-label="Начать разговор заново"
+            title="Начать заново"
+            className="stepper shrink-0 disabled:cursor-default disabled:opacity-35"
+          >
+            ×
           </button>
         </form>
 

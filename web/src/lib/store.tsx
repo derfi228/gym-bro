@@ -34,6 +34,7 @@ import { contribution } from "./volume";
 import * as sess from "./session";
 export type { Session } from "./session";
 export {
+  adjustKg,
   clock,
   countdownLeft,
   feedbackLabels,

@@ -10,6 +10,7 @@ import {
   scoreLabel,
 } from "@/lib/demo";
 import {
+  adjustKg,
   clock,
   countdownLeft,
   feedbackLabels,
@@ -73,6 +74,8 @@ export default function SessionMode() {
     swapSessionExercise,
   } = useStore();
   const [confirming, setConfirming] = useState(false);
+  // Насколько ответ подвинул рабочий вес — иначе он меняется молча
+  const [shift, setShift] = useState<{ from: number; to: number } | null>(null);
   // Не флаг, а номер упражнения: на следующем список замен закрыт сам собой
   const [swapAt, setSwapAt] = useState<number | null>(null);
   const now = useNow();
@@ -106,6 +109,12 @@ export default function SessionMode() {
   const alternatives = ex
     ? exercisesFor(ex.primary).filter((a) => a.id !== ex.id)
     : [];
+
+  function answer(f: Feedback) {
+    const to = adjustKg(kg, f);
+    setShift(kg !== null && to !== null && to !== kg ? { from: kg, to } : null);
+    completeSet(f);
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -190,6 +199,11 @@ export default function SessionMode() {
           <p className="mt-3 font-serif text-6xl font-light text-accent-hi">
             {mmss(restLeft)}
           </p>
+          {shift && (
+            <p className="mt-4 text-sm text-warm">
+              Рабочий вес: {shift.from} → {shift.to} кг
+            </p>
+          )}
           <p className="mt-4 text-sm text-dim">
             Дальше: {exerciseById(session.slots[session.index].exerciseId).name}
           </p>
@@ -289,7 +303,7 @@ export default function SessionMode() {
                 {answers.map((f) => (
                   <button
                     key={f}
-                    onClick={() => completeSet(f)}
+                    onClick={() => answer(f)}
                     disabled={paused}
                     className="btn-ghost py-2.5 text-[12px] disabled:cursor-default disabled:opacity-35"
                   >

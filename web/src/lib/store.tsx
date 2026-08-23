@@ -4,10 +4,27 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import type { ExerciseWeights, MuscleId, MuscleLoad } from "@shared/types";
+import { useAuth } from "./auth";
+import { getSupabase } from "./supabase";
+import {
+  isUuid,
+  loadsFrom,
+  newId,
+  programFrom,
+  programToRow,
+  weekStart,
+  weightsFrom,
+  weightToRow,
+  type ProgramRow,
+  type SetRow,
+  type WeightRow,
+} from "./sync";
 import {
   demoExercises,
   exerciseById,
@@ -193,7 +210,6 @@ type Store = {
   duplicateProgram: (id: string) => string | null;
   openProgram: (id: string | null) => void;
   addRestriction: (m: MuscleId) => void;
-  resetWeek: () => void;
 };
 
 const StoreContext = createContext<Store | null>(null);
@@ -208,18 +224,117 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [picker, setPicker] = useState<PickerState>(emptyPicker);
   const [session, setSession] = useState<sess.Session | null>(null);
 
+  const { session: auth } = useAuth();
+  const userId = auth?.user.id ?? null;
+
+  /** Строка идущей тренировки в базе. null — пишем только в память */
+  const workoutRow = useRef<string | null>(null);
+  /** Что уже отправлено, чтобы не переписывать базу тем же самым */
+  const sentPrograms = useRef("");
+  /** Отложенная запись весов по упражнениям */
+  const weightTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+
+  /**
+   * Загрузка при входе. Провайдер пересоздаётся при смене аккаунта (см. ключ
+   * в app/page.tsx), поэтому чистить прежнее состояние здесь не нужно.
+   */
+  useEffect(() => {
+    const sb = getSupabase();
+    if (!sb || !userId) return;
+    let cancelled = false;
+
+    void (async () => {
+      const [w, p, done] = await Promise.all([
+        sb.from("exercise_weights").select("exercise_id,peak_kg,working_kg"),
+        sb
+          .from("programs")
+          .select("id,name,target_min,slots,ai_generated,note")
+          .order("created_at", { ascending: false }),
+        sb
+          .from("workout_sets")
+          .select("exercise_id")
+          .gte("done_at", weekStart().toISOString()),
+      ]);
+      if (cancelled) return;
+
+      if (w.data) setWeights(weightsFrom(w.data as WeightRow[]));
+      if (p.data) {
+        const mine = (p.data as ProgramRow[]).map(programFrom);
+        // Отмечаем как отправленное, иначе тут же уйдёт обратно то же самое
+        sentPrograms.current = JSON.stringify(mine);
+        setPrograms([...mine, ...presetPrograms]);
+      }
+      // Объём недели считается из записанных подходов, а не хранится отдельно
+      if (done.data) setLoads(loadsFrom(done.data as SetRow[]));
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  /** Свои тренировки уезжают пачкой, чтобы правка подходов не била по базе */
+  useEffect(() => {
+    const sb = getSupabase();
+    if (!sb || !userId) return;
+    const mine = programs.filter((p) => !p.builtIn && isUuid(p.id));
+    const json = JSON.stringify(mine);
+    if (json === sentPrograms.current) return;
+
+    const t = setTimeout(() => {
+      if (mine.length === 0) {
+        sentPrograms.current = json;
+        return;
+      }
+      void sb
+        .from("programs")
+        .upsert(mine.map((p) => programToRow(userId, p)))
+        .then(({ error }) => {
+          if (error) console.error("Программы не сохранены:", error.message);
+          else sentPrograms.current = json;
+        });
+    }, 800);
+    return () => clearTimeout(t);
+  }, [programs, userId]);
+
+  /** Отложенная запись веса: поле правится на каждое нажатие клавиши */
+  const saveWeight = useCallback(
+    (w: ExerciseWeights) => {
+      const sb = getSupabase();
+      if (!sb || !userId) return;
+      const timers = weightTimers.current;
+      clearTimeout(timers.get(w.exerciseId));
+      timers.set(
+        w.exerciseId,
+        setTimeout(() => {
+          timers.delete(w.exerciseId);
+          void sb
+            .from("exercise_weights")
+            .upsert(weightToRow(userId, w))
+            .then(({ error }) => {
+              if (error) console.error("Вес не сохранён:", error.message);
+            });
+        }, 800),
+      );
+    },
+    [userId],
+  );
+
   const setWeight = useCallback(
     (
       exerciseId: string,
       field: "peakKg" | "workingKg",
       value: number | undefined,
     ) => {
-      setWeights((prev) => ({
-        ...prev,
-        [exerciseId]: { ...prev[exerciseId], exerciseId, [field]: value },
-      }));
+      const next: ExerciseWeights = {
+        ...weights[exerciseId],
+        exerciseId,
+        [field]: value,
+      };
+      setWeights((prev) => ({ ...prev, [exerciseId]: next }));
+      saveWeight(next);
     },
-    [],
+    [weights, saveWeight],
   );
 
   /** Подход добавляет объём целевой мышце и половину — вспомогательным */
@@ -348,8 +463,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (!target || target.builtIn) return;
       setPrograms((prev) => prev.filter((p) => p.id !== id));
       setActiveProgramId((cur) => (cur === id ? null : cur));
+
+      const sb = getSupabase();
+      if (sb && userId && isUuid(id))
+        void sb
+          .from("programs")
+          .delete()
+          .eq("id", id)
+          .then(({ error }) => {
+            if (error) console.error("Программа не удалена:", error.message);
+          });
     },
-    [programs],
+    [programs, userId],
   );
 
   /**
@@ -363,7 +488,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const stamp = Date.now();
       const copy: Program = {
         ...src,
-        id: `prog-${stamp}-${src.slots.length}`,
+        id: newId(),
         name: `${src.name} (копия)`,
         builtIn: false,
         slots: src.slots.map((s, i) => ({ ...s, key: `s-${stamp}-${i}` })),
@@ -382,35 +507,72 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setSplitSwaps((prev) => ({ ...prev, [key]: exerciseId }));
   }, []);
 
-  const startSession = useCallback((name: string, slots: ProgramSlot[]) => {
-    setSession(sess.startSession(name, slots));
-  }, []);
+  const startSession = useCallback(
+    (name: string, slots: ProgramSlot[]) => {
+      setSession(sess.startSession(name, slots));
+
+      const sb = getSupabase();
+      workoutRow.current = null;
+      if (!sb || !userId) return;
+      const id = newId();
+      workoutRow.current = id;
+      void sb
+        .from("workouts")
+        .insert({ id, user_id: userId, name })
+        .then(({ error }) => {
+          if (!error) return;
+          // Без строки тренировки подходы писать некуда — идём только в память
+          console.error("Тренировка не записана:", error.message);
+          workoutRow.current = null;
+        });
+    },
+    [userId],
+  );
 
   /**
    * Подход засчитывается в недельный объём, оценка двигает рабочий вес,
    * тренировка переходит к отдыху.
+   *
+   * Записи и правки идут до смены состояния, а не внутри неё: React вправе
+   * вызвать функцию обновления дважды, и тогда подход попал бы в базу дважды.
    */
   const completeSet = useCallback(
     (f: sess.Feedback) => {
-      setSession((s) => {
-        if (!s) return s;
-        const slot = s.slots[s.index];
-        if (!slot) return s;
+      if (!session) return;
+      const slot = session.slots[session.index];
+      if (!slot) return;
 
-        logSet(slot.exerciseId);
+      logSet(slot.exerciseId);
 
-        const base = sess.suggestKg(
-          weights[slot.exerciseId],
-          sess.lowReps(slot.reps)
-        );
-        const next = sess.adjustKg(base, f);
-        if (next !== null && next !== weights[slot.exerciseId]?.workingKg)
-          setWeight(slot.exerciseId, "workingKg", next);
+      const base = sess.suggestKg(
+        weights[slot.exerciseId],
+        sess.lowReps(slot.reps),
+      );
+      const next = sess.adjustKg(base, f);
+      if (next !== null && next !== weights[slot.exerciseId]?.workingKg)
+        setWeight(slot.exerciseId, "workingKg", next);
 
-        return sess.completeSet(s);
-      });
+      const sb = getSupabase();
+      const workoutId = workoutRow.current;
+      if (sb && userId && workoutId)
+        void sb
+          .from("workout_sets")
+          .insert({
+            workout_id: workoutId,
+            user_id: userId,
+            exercise_id: slot.exerciseId,
+            set_index: session.doneSets + 1,
+            reps: sess.lowReps(slot.reps),
+            weight_kg: base,
+            feedback: f,
+          })
+          .then(({ error }) => {
+            if (error) console.error("Подход не записан:", error.message);
+          });
+
+      setSession(sess.completeSet(session));
     },
-    [logSet, setWeight, weights]
+    [session, logSet, setWeight, weights, userId],
   );
 
   /**
@@ -447,7 +609,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     () => setSession((s) => (s ? { ...s, restEnds: null } : s)),
     []
   );
-  const endSession = useCallback(() => setSession(null), []);
+  const endSession = useCallback(() => {
+    const sb = getSupabase();
+    const workoutId = workoutRow.current;
+    if (sb && userId && workoutId)
+      void sb
+        .from("workouts")
+        .update({ finished_at: new Date().toISOString() })
+        .eq("id", workoutId)
+        .then(({ error }) => {
+          if (error) console.error("Конец тренировки не записан:", error.message);
+        });
+    workoutRow.current = null;
+    setSession(null);
+  }, [userId]);
 
   const startPicker = useCallback(
     () => setPicker({ active: true, name: "", picked: [] }),
@@ -478,7 +653,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       slotOf(id, 3, `s-${stamp}-${i}`),
     );
     const program: Program = {
-      id: `prog-${stamp}-${slots.length}`,
+      id: newId(),
       name: picker.name.trim() || "Своя тренировка",
       targetMin: Math.max(
         10,
@@ -496,7 +671,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setRestrictions((prev) => (prev.includes(m) ? prev : [...prev, m]));
   }, []);
 
-  const resetWeek = useCallback(() => setLoads(initialLoads), []);
 
   const value = useMemo<Store>(
     () => ({
@@ -536,7 +710,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       commitPicker,
       openProgram: setActiveProgramId,
       addRestriction,
-      resetWeek,
     }),
     [
       loads,
@@ -574,7 +747,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       clearPicks,
       commitPicker,
       addRestriction,
-      resetWeek,
     ],
   );
 

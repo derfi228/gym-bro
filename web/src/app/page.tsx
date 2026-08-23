@@ -53,10 +53,22 @@ const needsAccount: Record<TabId, string | null> = {
 export default function App() {
   return (
     <AuthProvider>
-      <StoreProvider>
-        <Shell />
-      </StoreProvider>
+      <StoreScope />
     </AuthProvider>
+  );
+}
+
+/**
+ * Ключ по аккаунту: при входе и выходе состояние приложения пересоздаётся
+ * с нуля. Иначе чужие веса и программы дожили бы до следующего человека,
+ * а чистить их вручную — лишний код на каждое поле.
+ */
+function StoreScope() {
+  const { session } = useAuth();
+  return (
+    <StoreProvider key={session?.user.id ?? "guest"}>
+      <Shell />
+    </StoreProvider>
   );
 }
 

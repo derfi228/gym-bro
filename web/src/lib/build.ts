@@ -5,6 +5,7 @@
 
 import type { Exercise, MuscleId, MuscleLoad } from "@shared/types";
 import { demoExercises, exerciseById } from "./demo";
+import { newId } from "./sync";
 import { contribution, landmarks, muscleIds } from "./volume";
 import type { Program, ProgramSlot } from "./store";
 
@@ -211,7 +212,8 @@ export function buildProgram(
   );
 
   return {
-    id: `prog-${Date.now()}-${Math.round(spent)}`,
+    // uuid, а не строка со временем: такой тип у ключа в базе
+    id: newId(),
     name: opts.name ?? `Программа на ${minutes} мин`,
     targetMin: minutes,
     slots,

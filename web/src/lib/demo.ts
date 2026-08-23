@@ -1387,6 +1387,24 @@ export const searchText = (e: Exercise) =>
     .join(" ")
     .toLowerCase();
 
+/**
+ * Насколько сильно упражнение грузит группу, чьё название совпало с запросом.
+ * Нужен, чтобы по запросу «спина» сначала шли тяги, где спина — целевая, а не
+ * приседы, где она лишь удерживает корпус. Запрос может совпасть с несколькими
+ * группами («бицепс» — и бицепс, и бицепс бедра), поэтому берётся сильнейшая.
+ * Запрос не про мышцы — ноль у всех, порядок остаётся прежним.
+ */
+export const muscleMatch = (e: Exercise, query: string): number => {
+  const q = query.trim().toLowerCase();
+  if (q === "") return 0;
+  return Math.max(
+    0,
+    ...(Object.keys(muscleNames) as MuscleId[])
+      .filter((m) => muscleNames[m].toLowerCase().includes(q))
+      .map((m) => e.involvement[m] ?? 0),
+  );
+};
+
 export function exercisesFor(muscleId: MuscleId): Exercise[] {
   return demoExercises
     .filter((e) => e.primary === muscleId)

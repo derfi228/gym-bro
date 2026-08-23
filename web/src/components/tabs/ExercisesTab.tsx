@@ -11,6 +11,7 @@ import {
   exerciseById,
   muscleNames,
   difficultyPercent,
+  muscleMatch,
   orderKey,
   scoreLabel,
   searchText,
@@ -98,6 +99,10 @@ export default function ExercisesTab({
       return byMuscle && byName && byEquipment;
     });
     return [...filtered].sort((a, b) => {
+      // Искали группу мышц — вперёд те, где она работает сильнее всего
+      const byInvolvement = muscleMatch(b, q) - muscleMatch(a, q);
+      if (byInvolvement !== 0) return byInvolvement;
+
       if (sort === "alpha") return a.name.localeCompare(b.name, "ru");
       if (sort === "difficulty")
         return (

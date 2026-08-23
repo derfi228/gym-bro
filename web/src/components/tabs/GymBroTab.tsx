@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { MuscleId, MuscleLoad } from "@shared/types";
+import { ask, runTool, type ChatMessage, type ToolDeps } from "@/lib/ai";
 import { useAuth } from "@/lib/auth";
 import { ageFrom, ageLabel } from "@/lib/profile";
 import { buildProgram, programMinutes, useStore } from "@/lib/store";
@@ -28,7 +29,13 @@ export default function GymBroTab({
 }) {
   const store = useStore();
   const { loads, restrictions, addProgram, openProgram, addRestriction } = store;
+  const { selectMuscle } = store;
   const { profile } = useAuth();
+
+  const [draft, setDraft] = useState("");
+  const [busy, setBusy] = useState(false);
+  /** Разговор в том виде, в каком его ждёт модель */
+  const history = useRef<ChatMessage[]>([]);
 
   // Пока профиль пустой, помощник о нём не заикается вместо выдуманных цифр
   const profileLine = [
@@ -150,6 +157,100 @@ export default function GymBroTab({
       };
     });
 
+  /** Что модель знает о человеке на момент вопроса */
+  const context = () => ({
+    name: profile?.name || undefined,
+    sex: profile?.sex,
+    heightCm: profile?.heightCm,
+    weightKg: profile?.weightKg,
+    age: profile?.birthYear ? ageFrom(profile.birthYear) : undefined,
+    level: profile?.level,
+    avoid: restrictions.map((m) => muscleNames[m]),
+    volume: loads.map((l) => ({
+      muscle: muscleNames[l.muscleId],
+      done: Math.round(l.setsDone * 10) / 10,
+      target: l.setsTarget,
+      status: l.ratio < 0.5 ? "мало" : l.ratio > 1 ? "перебор" : "в диапазоне",
+    })),
+  });
+
+  /** Инструменты выполняет приложение: модель только просит */
+  const deps: ToolDeps = {
+    buildProgram: (minutes, avoid) => {
+      const p = buildProgram(minutes, loads, {
+        avoid,
+        name: `GymBro: ${minutes} мин`,
+      });
+      addProgram(p);
+      const names = p.slots
+        .map((sl) => exerciseById(sl.exerciseId).name.toLowerCase())
+        .join(", ");
+      setThread((t) => [
+        ...t,
+        {
+          role: "bot",
+          text: `Собрал тренировку на ${programMinutes(p)} мин: ${names}.`,
+          cta: {
+            label: "Открыть программу",
+            run: () => {
+              openProgram(p.id);
+              onNavigate("program");
+            },
+          },
+        },
+      ]);
+      return `Собрана программа на ${programMinutes(p)} мин из ${p.slots.length} упражнений: ${names}. Человек видит кнопку, чтобы её открыть.`;
+    },
+    showOnBody: (muscles) => {
+      selectMuscle(muscles[0]);
+      onNavigate("body");
+      return `Открыл схему тела на группе «${muscleNames[muscles[0]]}».`;
+    },
+  };
+
+  /**
+   * Круг разговора: спросили — модель могла попросить действие — выполнили и
+   * спросили снова. Больше трёх кругов не даём: дальше это обычно петля.
+   */
+  async function send(text: string) {
+    const question = text.trim();
+    if (question === "" || busy) return;
+    setDraft("");
+    setBusy(true);
+    setThread((t) => [...t, { role: "user", text: question }]);
+    history.current = [...history.current, { role: "user", content: question }];
+
+    for (let round = 0; round < 3; round++) {
+      const res = await ask(context(), history.current);
+
+      if ("error" in res) {
+        setThread((t) => [...t, { role: "bot", text: res.error }]);
+        break;
+      }
+
+      const msg = res.message;
+      history.current = [
+        ...history.current,
+        { role: "assistant", content: msg.content, tool_calls: msg.tool_calls },
+      ];
+
+      if (msg.content?.trim())
+        setThread((t) => [...t, { role: "bot", text: msg.content!.trim() }]);
+
+      if (!msg.tool_calls?.length) break;
+
+      for (const call of msg.tool_calls) {
+        const result = await runTool(call, deps);
+        history.current = [
+          ...history.current,
+          { role: "tool", tool_call_id: call.id, content: result },
+        ];
+      }
+    }
+
+    setBusy(false);
+  }
+
   const actions: { label: string; run: () => void }[] = [
     { label: "Что у меня отстаёт?", run: askLagging },
     { label: "Есть перебор?", run: askOvertrained },
@@ -200,7 +301,31 @@ export default function GymBroTab({
       </div>
 
       <div className="card p-5">
-        <p className="kicker">Спросить</p>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void send(draft);
+          }}
+          className="flex items-center gap-2.5"
+        >
+          <input
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            disabled={busy}
+            placeholder={busy ? "Думаю…" : "Спросите что угодно"}
+            aria-label="Вопрос помощнику"
+            className="min-w-0 flex-1 rounded-pill border border-line bg-accent/[0.04] px-4 py-2.5 text-sm text-bright outline-none transition-colors placeholder:text-dim focus:border-accent disabled:opacity-50"
+          />
+          <button
+            type="submit"
+            disabled={busy || draft.trim() === ""}
+            className="btn shrink-0 px-5 py-2.5 text-[12px] disabled:cursor-default disabled:opacity-40"
+          >
+            Спросить
+          </button>
+        </form>
+
+        <p className="kicker mt-6">Или готовые вопросы</p>
         <div className="mt-3 flex flex-wrap gap-2">
           {actions.map((a) => (
             <button
@@ -213,9 +338,11 @@ export default function GymBroTab({
           ))}
         </div>
         <p className="mt-4 text-[11px] leading-relaxed text-dim">
-          Помощник читает ваш реальный объём из схемы тела и создаёт программы во
-          вкладке «Программа». Языковой модели на сайте нет — логика подбора
-          считается на месте.
+          Готовые вопросы считаются на месте и работают мгновенно. Свободный
+          вопрос уходит модели: она видит ваш профиль и объём за неделю, умеет
+          собрать тренировку, открыть группу на схеме и посмотреть историю
+          подходов в упражнении. Сами тренировки собирает приложение, а не
+          модель — цифры она не выдумывает.
         </p>
       </div>
     </div>

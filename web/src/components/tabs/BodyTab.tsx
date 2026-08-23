@@ -1,7 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import type { MuscleId } from "@shared/types";
+import { useMemo } from "react";
 import BodyPanel from "@/components/BodyPanel";
 import ProfileBar from "@/components/ProfileBar";
 import SessionMode from "@/components/SessionMode";
@@ -17,8 +16,7 @@ import { landmarks, statusLabels, statusOf } from "@/lib/landmarks";
 import { useStore } from "@/lib/store";
 
 export default function BodyTab() {
-  const { loads, session } = useStore();
-  const [selected, setSelected] = useState<MuscleId>("chest");
+  const { loads, session, selectedMuscle: selected, selectMuscle } = useStore();
 
   const sets = useMemo(
     () => Object.fromEntries(loads.map((l) => [l.muscleId, l.setsDone])),
@@ -41,7 +39,7 @@ export default function BodyTab() {
           sets={sets}
           kicker="Неделя"
           selected={selected}
-          onSelect={setSelected}
+          onSelect={selectMuscle}
         />
 
         {/* ── Разбор группы ──────────────────────────────────────────── */}

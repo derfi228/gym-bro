@@ -211,6 +211,9 @@ type Store = {
   duplicateProgram: (id: string) => string | null;
   openProgram: (id: string | null) => void;
   addRestriction: (m: MuscleId) => void;
+  /** Какая группа разбирается на схеме тела. Её может выбрать и помощник */
+  selectedMuscle: MuscleId;
+  selectMuscle: (m: MuscleId) => void;
 };
 
 const StoreContext = createContext<Store | null>(null);
@@ -224,6 +227,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [splitSwaps, setSplitSwaps] = useState<Record<string, string>>({});
   const [picker, setPicker] = useState<PickerState>(emptyPicker);
   const [session, setSession] = useState<sess.Session | null>(null);
+  const [selectedMuscle, selectMuscle] = useState<MuscleId>("chest");
 
   const { session: auth } = useAuth();
   const userId = auth?.user.id ?? null;
@@ -711,6 +715,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       commitPicker,
       openProgram: setActiveProgramId,
       addRestriction,
+      selectedMuscle,
+      selectMuscle,
     }),
     [
       loads,
@@ -748,6 +754,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       clearPicks,
       commitPicker,
       addRestriction,
+      selectedMuscle,
     ],
   );
 

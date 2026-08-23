@@ -6,13 +6,19 @@ const byId = (id: string) => demoExercises.find((e) => e.id === id)!;
 
 test("поиск видит названия групп, а не только названия упражнений", () => {
   assert.ok(searchText(byId("pull-up")).includes("спина"));
-  assert.ok(searchText(byId("bb-bench")).includes("трицепс"), "вспомогательные тоже");
+  assert.ok(
+    searchText(byId("bb-bench")).includes("трицепс"),
+    "вспомогательные тоже",
+  );
 });
 
 test("по запросу группы вперёд идут упражнения, где она целевая", () => {
   const pull = muscleMatch(byId("pull-up"), "спина");
   const squat = muscleMatch(byId("back-squat"), "спина");
-  assert.ok(pull > squat, `подтягивания ${pull} должны быть выше приседа ${squat}`);
+  assert.ok(
+    pull > squat,
+    `подтягивания ${pull} должны быть выше приседа ${squat}`,
+  );
 });
 
 test("запрос не про мышцы порядок не трогает", () => {

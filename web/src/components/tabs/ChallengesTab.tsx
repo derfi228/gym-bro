@@ -12,9 +12,21 @@ type Challenge = {
 };
 
 const initial: Challenge[] = [
-  { id: "gym3", title: "Сходить в зал 3 раза", done: 2, goal: 3, friend: false },
+  {
+    id: "gym3",
+    title: "Сходить в зал 3 раза",
+    done: 2,
+    goal: 3,
+    friend: false,
+  },
   { id: "legs", title: "Не пропустить ноги", done: 1, goal: 1, friend: false },
-  { id: "calves", title: "Добить икры до нормы", done: 3, goal: 8, friend: false },
+  {
+    id: "calves",
+    title: "Добить икры до нормы",
+    done: 3,
+    goal: 8,
+    friend: false,
+  },
   { id: "duo", title: "Вдвоём: 6 тренировок", done: 4, goal: 6, friend: true },
 ];
 
@@ -24,8 +36,8 @@ export default function ChallengesTab() {
   function bump(id: string) {
     setItems((list) =>
       list.map((c) =>
-        c.id === id ? { ...c, done: Math.min(c.goal, c.done + 1) } : c
-      )
+        c.id === id ? { ...c, done: Math.min(c.goal, c.done + 1) } : c,
+      ),
     );
   }
 
@@ -61,7 +73,9 @@ export default function ChallengesTab() {
               style={{ "--i": i } as React.CSSProperties}
             >
               <div className="flex items-start justify-between gap-3">
-                <p className="text-[15px] leading-snug text-bright">{c.title}</p>
+                <p className="text-[15px] leading-snug text-bright">
+                  {c.title}
+                </p>
                 {c.friend && <span className="chip">с другом</span>}
               </div>
 

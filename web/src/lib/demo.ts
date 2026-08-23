@@ -1306,7 +1306,12 @@ export const splits: TrainingSplit[] = [
     days: [
       {
         name: "Грудь",
-        exerciseIds: ["bb-bench", "incline-db-fly", "cable-crossover", "pec-deck"],
+        exerciseIds: [
+          "bb-bench",
+          "incline-db-fly",
+          "cable-crossover",
+          "pec-deck",
+        ],
       },
       {
         name: "Спина",
@@ -1358,13 +1363,22 @@ export const splits: TrainingSplit[] = [
         name: "Грудь и трицепс",
         exerciseIds: ["bb-bench", "machine-press", "close-grip-bench"],
       },
-      { name: "Спина", exerciseIds: ["bent-over-row", "lat-pulldown", "db-shrug"] },
+      {
+        name: "Спина",
+        exerciseIds: ["bent-over-row", "lat-pulldown", "db-shrug"],
+      },
       {
         name: "Плечи",
         exerciseIds: ["db-shoulder-press", "bent-arm-lateral", "upright-row"],
       },
-      { name: "Ноги", exerciseIds: ["back-squat", "leg-press", "standing-calf-raise"] },
-      { name: "Руки", exerciseIds: ["bb-curl", "preacher-curl", "skullcrusher"] },
+      {
+        name: "Ноги",
+        exerciseIds: ["back-squat", "leg-press", "standing-calf-raise"],
+      },
+      {
+        name: "Руки",
+        exerciseIds: ["bb-curl", "preacher-curl", "skullcrusher"],
+      },
     ],
   },
 ];

@@ -51,7 +51,7 @@ export default function BodyPanel({
   const rows = useMemo(() => report(sets, scale), [sets, scale]);
   const byMuscle = useMemo(
     () => new Map(rows.map((r) => [r.muscleId, r])),
-    [rows]
+    [rows],
   );
 
   // Выбор группы уводит на ту проекцию, где она видна
@@ -70,7 +70,7 @@ export default function BodyPanel({
 
   return (
     <div className="card card-lit relative overflow-hidden p-5 sm:p-6">
-{/* Фигура — главный объект экрана, ей нужен свет: холодный сверху,
+      {/* Фигура — главный объект экрана, ей нужен свет: холодный сверху,
           тёплый снизу. Так силуэт отрывается от карточки */}
       <div
         aria-hidden
@@ -83,7 +83,9 @@ export default function BodyPanel({
       />
 
       <div className="relative flex items-center justify-between gap-4">
-        <p className="kicker">{kicker ?? (view === "front" ? "Спереди" : "Сзади")}</p>
+        <p className="kicker">
+          {kicker ?? (view === "front" ? "Спереди" : "Сзади")}
+        </p>
         <button
           onClick={() => setView(view === "front" ? "back" : "front")}
           aria-label={
@@ -113,7 +115,9 @@ export default function BodyPanel({
         {LEGEND.map((l) => (
           <li key={l.status} className="flex items-center gap-1.5">
             <span className="dot" style={{ background: l.color }} />
-            <span className="text-[10px] text-dim">{statusLabels[l.status]}</span>
+            <span className="text-[10px] text-dim">
+              {statusLabels[l.status]}
+            </span>
           </li>
         ))}
       </ul>

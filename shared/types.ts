@@ -151,7 +151,8 @@ export interface TrainingSplit {
   sourceId: string;
 }
 
-export type Equipment = "barbell" | "dumbbell" | "machine" | "bodyweight" | "cable";
+export type Equipment =
+  "barbell" | "dumbbell" | "machine" | "bodyweight" | "cable";
 
 /* ── Цели и ИИ-помощник ───────────────────────────────────────────────────── */
 

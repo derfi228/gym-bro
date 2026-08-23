@@ -25,11 +25,7 @@ import {
   type SetRow,
   type WeightRow,
 } from "./sync";
-import {
-  demoExercises,
-  exerciseById,
-  initialLoads,
-} from "./demo";
+import { demoExercises, exerciseById, initialLoads } from "./demo";
 import { contribution } from "./volume";
 import * as sess from "./session";
 export type { Session } from "./session";
@@ -45,12 +41,7 @@ export {
   type Feedback,
 } from "./session";
 import { slotCost, slotOf } from "./build";
-export {
-  buildProgram,
-  programMinutes,
-  slotCost,
-  slotOf,
-} from "./build";
+export { buildProgram, programMinutes, slotCost, slotOf } from "./build";
 
 /* ── Модель программы в интерфейсе ────────────────────────────────────────── */
 
@@ -579,12 +570,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (!s) return s;
       const cur = s.slots[s.index];
       if (!cur || cur.exerciseId === exerciseId) return s;
-      if (exerciseById(exerciseId).primary !== exerciseById(cur.exerciseId).primary)
+      if (
+        exerciseById(exerciseId).primary !==
+        exerciseById(cur.exerciseId).primary
+      )
         return s;
       return {
         ...s,
         slots: s.slots.map((sl, i) =>
-          i === s.index ? { ...sl, exerciseId } : sl
+          i === s.index ? { ...sl, exerciseId } : sl,
         ),
       };
     });
@@ -592,16 +586,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const pauseSession = useCallback(
     () => setSession((s) => (s ? sess.pause(s) : s)),
-    []
+    [],
   );
   const resumeSession = useCallback(
     () => setSession((s) => (s ? sess.resume(s) : s)),
-    []
+    [],
   );
 
   const skipRest = useCallback(
     () => setSession((s) => (s ? { ...s, restEnds: null } : s)),
-    []
+    [],
   );
   const endSession = useCallback(() => {
     const sb = getSupabase();
@@ -612,7 +606,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         .update({ finished_at: new Date().toISOString() })
         .eq("id", workoutId)
         .then(({ error }) => {
-          if (error) console.error("Конец тренировки не записан:", error.message);
+          if (error)
+            console.error("Конец тренировки не записан:", error.message);
         });
     workoutRow.current = null;
     setSession(null);
@@ -664,7 +659,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const addRestriction = useCallback((m: MuscleId) => {
     setRestrictions((prev) => (prev.includes(m) ? prev : [...prev, m]));
   }, []);
-
 
   const value = useMemo<Store>(
     () => ({

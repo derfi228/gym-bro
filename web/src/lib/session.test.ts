@@ -35,7 +35,11 @@ test("подход копится, упражнение сменяется по 
   s = completeSet(s, 120_000);
   assert.ok(isDone(s), "после последнего упражнения тренировка закончена");
 
-  assert.deepEqual(completeSet(s, 0), s, "лишний подход после конца ничего не ломает");
+  assert.deepEqual(
+    completeSet(s, 0),
+    s,
+    "лишний подход после конца ничего не ломает",
+  );
 });
 
 test("пауза не съедает время тренировки и отдыха", () => {
@@ -49,15 +53,23 @@ test("пауза не съедает время тренировки и отды
   assert.equal(
     clock(s, 40_000) - s.startedAt,
     10_000 - COUNTDOWN,
-    "простой не засчитался в тренировку"
+    "простой не засчитался в тренировку",
   );
   assert.equal(s.restEnds, 90_000, "остаток отдыха сохранился");
 
-  assert.deepEqual(resume(s, 50_000), s, "снятие с паузы без паузы ничего не меняет");
+  assert.deepEqual(
+    resume(s, 50_000),
+    s,
+    "снятие с паузы без паузы ничего не меняет",
+  );
 });
 
 test("рекомендуемый вес и его правка по ответу", () => {
-  assert.equal(suggestKg({ workingKg: 80 }, 8), 80, "рабочий вес важнее пересчёта");
+  assert.equal(
+    suggestKg({ workingKg: 80 }, 8),
+    80,
+    "рабочий вес важнее пересчёта",
+  );
   assert.equal(suggestKg({ peakKg: 100 }, 8), 80, "Эпли: 78.9 → до блина 80");
   assert.equal(suggestKg(undefined, 8), null, "без данных рекомендации нет");
 
@@ -85,5 +97,9 @@ test("отсчёт перед стартом", () => {
   assert.equal(countdownLeft(s, 2_500), 1);
   assert.equal(countdownLeft(s, COUNTDOWN), 0, "после отсчёта ноль");
   assert.equal(countdownLeft(s, 99_999), 0, "и дальше остаётся нулём");
-  assert.equal(mmss((0 - s.startedAt) / 1000), "0:00", "часы не уходят в минус");
+  assert.equal(
+    mmss((0 - s.startedAt) / 1000),
+    "0:00",
+    "часы не уходят в минус",
+  );
 });

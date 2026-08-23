@@ -4,8 +4,14 @@ const messages: [RegExp, string][] = [
   [/email not confirmed/i, "Почта не подтверждена — проверьте письмо"],
   [/user already registered/i, "Аккаунт с такой почтой уже есть"],
   [/password should be at least (\d+)/i, "Пароль короче $1 символов"],
-  [/unable to validate email|invalid format/i, "Похоже, в адресе почты опечатка"],
-  [/for security purposes.*(\d+) seconds/i, "Слишком часто — подождите $1 секунд"],
+  [
+    /unable to validate email|invalid format/i,
+    "Похоже, в адресе почты опечатка",
+  ],
+  [
+    /for security purposes.*(\d+) seconds/i,
+    "Слишком часто — подождите $1 секунд",
+  ],
   [/failed to fetch|network/i, "Нет связи с сервером"],
 ];
 

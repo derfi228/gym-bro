@@ -112,12 +112,14 @@ export function report(sets: SetsByMuscle, scale = 1): MuscleReport[] {
 /** Значения 0..1+ для схемы тела */
 export const fillValues = (
   sets: SetsByMuscle,
-  scale = 1
+  scale = 1,
 ): Partial<Record<MuscleId, number>> =>
   Object.fromEntries(muscleIds.map((m) => [m, fillOf(m, sets[m] ?? 0, scale)]));
 
 export const statusValues = (
   sets: SetsByMuscle,
-  scale = 1
+  scale = 1,
 ): Partial<Record<MuscleId, MuscleStatus>> =>
-  Object.fromEntries(muscleIds.map((m) => [m, statusOf(m, sets[m] ?? 0, scale)]));
+  Object.fromEntries(
+    muscleIds.map((m) => [m, statusOf(m, sets[m] ?? 0, scale)]),
+  );

@@ -27,7 +27,11 @@ type Auth = {
   status: "loading" | "in" | "out" | "off";
   session: Session | null;
   profile: UserProfile | null;
-  signUp: (email: string, password: string, name: string) => Promise<AuthResult>;
+  signUp: (
+    email: string,
+    password: string,
+    name: string,
+  ) => Promise<AuthResult>;
   signIn: (email: string, password: string) => Promise<AuthResult>;
   signOut: () => Promise<void>;
   saveProfile: (patch: Partial<UserProfile>) => Promise<AuthResult>;
@@ -180,4 +184,3 @@ export function useAuth(): Auth {
   if (!ctx) throw new Error("useAuth вне AuthProvider");
   return ctx;
 }
-

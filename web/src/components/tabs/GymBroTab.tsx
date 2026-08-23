@@ -54,7 +54,8 @@ export default function GymBroTab({
   onNavigate: (tab: "body" | "program") => void;
 }) {
   const store = useStore();
-  const { loads, restrictions, addProgram, openProgram, addRestriction } = store;
+  const { loads, restrictions, addProgram, openProgram, addRestriction } =
+    store;
   const { selectMuscle } = store;
   const { profile, session } = useAuth();
   const userId = session?.user.id ?? null;
@@ -145,7 +146,10 @@ export default function GymBroTab({
     showOnBody: (muscles) => {
       // Вкладку не переключаем сами: переход предлагается кнопкой
       selectMuscle(muscles[0]);
-      setAction({ label: "Посмотреть на схеме", run: () => onNavigate("body") });
+      setAction({
+        label: "Посмотреть на схеме",
+        run: () => onNavigate("body"),
+      });
       return `Схема тела переключена на «${muscleNames[muscles[0]]}». Человек видит кнопку, чтобы перейти.`;
     },
     remember: async (fact) => {
@@ -249,11 +253,16 @@ export default function GymBroTab({
           );
           return;
         }
-        setAction({ label: "Показать на схеме", run: () => onNavigate("body") });
+        setAction({
+          label: "Показать на схеме",
+          run: () => onNavigate("body"),
+        });
         void say(
           "Что у меня отстаёт?",
           `Сильнее всего отстают: ${list(lag.slice(0, 3))}.` +
-            (profileLine ? `\n\nСчитаю от вашего профиля: ${profileLine}.` : ""),
+            (profileLine
+              ? `\n\nСчитаю от вашего профиля: ${profileLine}.`
+              : ""),
         );
       },
     },

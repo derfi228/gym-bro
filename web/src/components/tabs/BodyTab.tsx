@@ -20,7 +20,7 @@ export default function BodyTab() {
 
   const sets = useMemo(
     () => Object.fromEntries(loads.map((l) => [l.muscleId, l.setsDone])),
-    [loads]
+    [loads],
   );
 
   const done = sets[selected] ?? 0;
@@ -95,7 +95,9 @@ export default function BodyTab() {
                 </div>
                 <div className="mt-2 flex flex-wrap items-center gap-1.5">
                   <span className="chip">{evidenceLabels[ex.evidence]}</span>
-                  <span className="chip">{difficultyLabels[ex.difficulty]}</span>
+                  <span className="chip">
+                    {difficultyLabels[ex.difficulty]}
+                  </span>
                   <span className="chip">{equipmentLabels[ex.equipment]}</span>
                 </div>
               </li>

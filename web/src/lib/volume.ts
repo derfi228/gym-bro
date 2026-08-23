@@ -42,7 +42,10 @@ export function slotsSets(slots: ProgramSlot[]): SetsByMuscle {
 export const programSets = (p: Program): SetsByMuscle => slotsSets(p.slots);
 
 /** Недельный объём плюс то, что добавит программа */
-export function withWeek(sets: SetsByMuscle, loads: MuscleLoad[]): SetsByMuscle {
+export function withWeek(
+  sets: SetsByMuscle,
+  loads: MuscleLoad[],
+): SetsByMuscle {
   const out: SetsByMuscle = { ...sets };
   for (const l of loads) out[l.muscleId] = (out[l.muscleId] ?? 0) + l.setsDone;
   return out;
@@ -77,7 +80,7 @@ export interface Fix {
  */
 export function fixesFor(
   program: Program,
-  opts: { avoid?: MuscleId[]; only?: MuscleId[]; week?: MuscleLoad[] } = {}
+  opts: { avoid?: MuscleId[]; only?: MuscleId[]; week?: MuscleLoad[] } = {},
 ): Fix[] {
   const own = programSets(program);
   const sets = opts.week ? withWeek(own, opts.week) : own;
@@ -111,7 +114,7 @@ export function fixesFor(
 
     if (r.status === "none" || r.status === "low") {
       const best = exercisesFor(m).find(
-        (e) => !program.slots.some((s) => s.exerciseId === e.id)
+        (e) => !program.slots.some((s) => s.exerciseId === e.id),
       );
       if (!best) continue;
       const need = Math.max(1, Math.ceil((landmarks[m].mavLow - r.sets) / 2));
@@ -142,7 +145,10 @@ export function fixesFor(
     if (!worst || worst.sets <= 1) continue;
 
     const ceiling = landmarks[m].mavHigh * SESSION_SHARE;
-    const cut = Math.min(worst.sets - 1, Math.max(1, Math.ceil(r.sets - ceiling)));
+    const cut = Math.min(
+      worst.sets - 1,
+      Math.max(1, Math.ceil(r.sets - ceiling)),
+    );
     fixes.push({
       id: `session-${m}`,
       kind: "reduce",
@@ -163,4 +169,3 @@ export function candidatesFor(program: Program, m: MuscleId): Exercise[] {
   const used = new Set(program.slots.map((s) => s.exerciseId));
   return exercisesFor(m).filter((e) => !used.has(e.id));
 }
-

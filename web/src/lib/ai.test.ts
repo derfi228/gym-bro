@@ -14,7 +14,11 @@ test("группа находится по названию, в том числ�
 
 test("упражнение находится по названию", () => {
   assert.equal(exerciseByName("Жим штанги лёжа")?.id, "bb-bench");
-  assert.equal(exerciseByName("жим штанги лежа")?.id, "bb-bench", "ё и регистр");
+  assert.equal(
+    exerciseByName("жим штанги лежа")?.id,
+    "bb-bench",
+    "ё и регистр",
+  );
   assert.equal(exerciseByName("такого нет"), null);
 });
 
@@ -80,7 +84,10 @@ test("подсветка без узнанных групп не зовёт пр
       return String(m);
     },
   };
-  const out = await runTool(call("show_on_body", { muscles: ["чепуха"] }), deps);
+  const out = await runTool(
+    call("show_on_body", { muscles: ["чепуха"] }),
+    deps,
+  );
   assert.equal(called, false);
   assert.match(out, /нет/i);
 });

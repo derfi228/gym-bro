@@ -27,7 +27,7 @@ export const COUNTDOWN = 3000;
 export const startSession = (
   name: string,
   slots: SessionSlot[],
-  now = Date.now()
+  now = Date.now(),
 ): Session => ({
   name,
   slots,
@@ -93,7 +93,7 @@ const toPlate = (kg: number) => Math.max(2.5, Math.round(kg / 2.5) * 2.5);
  */
 export function suggestKg(
   w: { peakKg?: number; workingKg?: number } | undefined,
-  reps: number
+  reps: number,
 ): number | null {
   if (w?.workingKg) return w.workingKg;
   if (w?.peakKg) return toPlate(w.peakKg / (1 + reps / 30));

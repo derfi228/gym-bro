@@ -112,7 +112,9 @@ export function exerciseByName(name: string) {
   const q = norm(name);
   return (
     exerciseByExact.get(q) ??
-    demoExercises.find((e) => norm(e.name).includes(q) || q.includes(norm(e.name))) ??
+    demoExercises.find(
+      (e) => norm(e.name).includes(q) || q.includes(norm(e.name)),
+    ) ??
     null
   );
 }
@@ -165,10 +167,7 @@ async function history(exerciseId: string, name: string): Promise<string> {
  * Ошибки не глотаются: модель должна узнать, что действие не вышло,
  * иначе она отчитается об успехе, которого не было.
  */
-export async function runTool(
-  call: ToolCall,
-  deps: ToolDeps,
-): Promise<string> {
+export async function runTool(call: ToolCall, deps: ToolDeps): Promise<string> {
   let args: Record<string, unknown> = {};
   try {
     args = JSON.parse(call.function.arguments || "{}");

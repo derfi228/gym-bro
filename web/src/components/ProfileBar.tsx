@@ -62,7 +62,9 @@ function NumberField({
         }}
         className={numberField}
       />
-      <span className="mt-1 block text-center text-[10px] text-dim">{unit}</span>
+      <span className="mt-1 block text-center text-[10px] text-dim">
+        {unit}
+      </span>
     </label>
   );
 }

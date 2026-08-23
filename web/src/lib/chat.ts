@@ -42,7 +42,8 @@ export function trimOrphans(msgs: ChatMessage[]): ChatMessage[] {
       // Вызов, на который в этом окне нет ответа, тянет за собой отказ
       if (calls.length > 0 && !calls.every((c) => answered.has(c.id))) {
         // Текст сохраняем, вызовы отбрасываем — он мог быть полезным
-        if (m.content?.trim()) out.push({ role: "assistant", content: m.content });
+        if (m.content?.trim())
+          out.push({ role: "assistant", content: m.content });
         continue;
       }
       for (const c of calls) called.add(c.id);
@@ -60,7 +61,11 @@ export function trimOrphans(msgs: ChatMessage[]): ChatMessage[] {
 
 const toMessage = (r: Row): ChatMessage =>
   r.role === "tool"
-    ? { role: "tool", tool_call_id: r.tool_call_id ?? "", content: r.content ?? "" }
+    ? {
+        role: "tool",
+        tool_call_id: r.tool_call_id ?? "",
+        content: r.content ?? "",
+      }
     : r.role === "user"
       ? { role: "user", content: r.content ?? "" }
       : {
@@ -91,7 +96,7 @@ export async function appendChat(
   const rows = msgs.map((m) => ({
     user_id: userId,
     role: m.role,
-    content: m.role === "assistant" ? m.content : m.content,
+    content: m.content,
     tool_calls: m.role === "assistant" ? (m.tool_calls ?? null) : null,
     tool_call_id: m.role === "tool" ? m.tool_call_id : null,
   }));
@@ -135,7 +140,8 @@ export async function addFact(
     .maybeSingle();
   if (error) {
     // 23505 — такой факт уже записан, это не ошибка
-    if (error.code !== "23505") console.error("Факт не записан:", error.message);
+    if (error.code !== "23505")
+      console.error("Факт не записан:", error.message);
     return null;
   }
   return (data as Fact) ?? null;

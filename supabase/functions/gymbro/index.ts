@@ -249,8 +249,8 @@ Deno.serve(async (req: Request) => {
   if (messages.length > MAX_MESSAGES)
     return json({ error: "Разговор слишком длинный, начните заново" }, 400);
 
-  const size = JSON.stringify(messages).length +
-    JSON.stringify(body.context ?? {}).length;
+  const size =
+    JSON.stringify(messages).length + JSON.stringify(body.context ?? {}).length;
   if (size > MAX_CHARS)
     return json({ error: "Слишком много текста, начните заново" }, 400);
 

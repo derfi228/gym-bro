@@ -70,7 +70,8 @@ const isCompound = (ex: Exercise) =>
   Object.values(ex.involvement).filter((v) => v >= 0.4).length >= 3;
 
 /** Чем меньше, тем раньше упражнение в тренировке */
-export const orderRank = (ex: Exercise) => (isCompound(ex) ? 0 : 3) + tier[ex.primary];
+export const orderRank = (ex: Exercise) =>
+  (isCompound(ex) ? 0 : 3) + tier[ex.primary];
 
 /**
  * Подпись движения: группы, которые оно грузит почти по максимуму. У приседа

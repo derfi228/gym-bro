@@ -310,7 +310,9 @@ export default function ExercisesTab({
                     label={`Активация · ${muscleNames[ex.primary].toLowerCase()}`}
                     percent={ex.emgPercent}
                     value={
-                      ex.emgPercent !== null ? `${ex.emgPercent} %` : "нет данных"
+                      ex.emgPercent !== null
+                        ? `${ex.emgPercent} %`
+                        : "нет данных"
                     }
                   />
                   <Scale

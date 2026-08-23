@@ -49,14 +49,17 @@ export default function ProgramTab({
   const { programs, activeProgramId, openProgram } = useStore();
   // Слот помнится вместе с программой: при переходе к другой он сам перестаёт
   // считаться открытым, и сбрасывать его отдельно не нужно
-  const [opened, setOpened] = useState<{ program: string; slot: string } | null>(
-    null,
-  );
+  const [opened, setOpened] = useState<{
+    program: string;
+    slot: string;
+  } | null>(null);
 
   const program = programs.find((p) => p.id === activeProgramId) ?? null;
   const openSlot = opened?.program === activeProgramId ? opened.slot : null;
   const setOpenSlot = (slot: string | null) =>
-    setOpened(slot && activeProgramId ? { program: activeProgramId, slot } : null);
+    setOpened(
+      slot && activeProgramId ? { program: activeProgramId, slot } : null,
+    );
 
   if (!program) return <ProgramList onNavigate={onNavigate} />;
   if (openSlot)

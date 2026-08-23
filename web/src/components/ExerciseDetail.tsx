@@ -142,7 +142,9 @@ export default function ExerciseDetail({
             </span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="w-32 shrink-0 text-[11px] text-dim">Сложность</span>
+            <span className="w-32 shrink-0 text-[11px] text-dim">
+              Сложность
+            </span>
             <span className="meter meter-warm flex-1">
               <span style={{ width: `${difficultyPercent(exercise)}%` }} />
             </span>

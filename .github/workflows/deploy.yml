@@ -38,8 +38,10 @@ jobs:
       - name: Build static export
         working-directory: web
         env:
-          # Сайт живёт по адресу /gym-bro, а не в корне домена
-          NEXT_PUBLIC_BASE_PATH: /gym-bro
+          # Сайт живёт в корне gym-bro.ru, поэтому базовый путь пустой.
+          # Привязка домена — в web/public/CNAME, она попадает в сборку.
+          # Если домен когда-нибудь отключат и сайт вернётся на
+          # derfi228.github.io/gym-bro, сюда надо вернуть NEXT_PUBLIC_BASE_PATH=/gym-bro
           # Публичные значения Supabase. Если их не задать, сборка пройдёт, но
           # вход в аккаунт будет выключен, а приложение останется без него
           NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}

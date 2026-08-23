@@ -443,9 +443,9 @@ function SplitDetail({
                       slotOf(
                         splitSwaps[splitSlotKey(split.id, day.name, id)] ?? id,
                         3,
-                        `d${i}`
-                      )
-                    )
+                        `d${i}`,
+                      ),
+                    ),
                   );
                   onNavigate("body");
                 }}
@@ -856,62 +856,67 @@ function ProgramBuilder({
 
         {/* ── Правая колонка: правки и упражнения ────────────────────── */}
         <div className="flex flex-col gap-4">
-          {/* Дисбалансы */}
-          <div className="card card-lit p-5">
-            <div className="flex items-baseline justify-between gap-3">
-              <p className="kicker">Что поправить</p>
-              {!builtIn && fixes.length > 1 && (
-                <button
-                  onClick={() => fixes.forEach(applyFix)}
-                  className="btn-ghost px-3.5 py-1 text-[11px]"
-                >
-                  Применить всё
-                </button>
-              )}
-            </div>
-
-            {fixes.length === 0 ? (
-              <p className="mt-4 text-sm text-bright">
-                Дисбалансов нет: каждая группа либо в рабочем диапазоне, либо
-                исключена.
-              </p>
-            ) : (
-              <ul className="mt-4 flex flex-col gap-2">
-                {fixes.map((f, i) => (
-                  <li
-                    key={f.id}
-                    className="reveal flex items-start justify-between gap-3 rounded-[14px] border border-line bg-accent/[0.03] p-3.5"
-                    style={{ "--i": i } as React.CSSProperties}
+          {/* Дисбалансы. У собранных помощником не показываем: он только что
+              составил тренировку, и разбор читался бы как «исправь то, что я
+              тебе дал». Разбор считает неделю целиком, а одна тренировка её
+              закрыть не может — совет «добавьте ещё» вылезал бы всегда */}
+          {!program.aiGenerated && (
+            <div className="card card-lit p-5">
+              <div className="flex items-baseline justify-between gap-3">
+                <p className="kicker">Что поправить</p>
+                {!builtIn && fixes.length > 1 && (
+                  <button
+                    onClick={() => fixes.forEach(applyFix)}
+                    className="btn-ghost px-3.5 py-1 text-[11px]"
                   >
-                    <div className="min-w-0">
-                      <p className="text-[13px] text-bright">
-                        {muscleNames[f.muscleId]}
-                      </p>
-                      <p className="mt-1 text-[11px] leading-relaxed text-dim">
-                        {f.text}
-                      </p>
-                    </div>
-                    {builtIn ? (
-                      <span className="shrink-0 text-[11px] text-dim">
-                        {f.kind === "add" ? `+${f.sets}` : `−${f.sets}`}
-                      </span>
-                    ) : (
-                      <button
-                        onClick={() => applyFix(f)}
-                        className="btn-ghost shrink-0 px-3.5 py-1 text-[11px]"
-                      >
-                        {f.kind === "add" ? `+${f.sets}` : `−${f.sets}`}
-                      </button>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-            <p className="mt-4 text-[11px] leading-relaxed text-dim">
-              Границы объёма — ориентиры для среднего человека, переносимость
-              различается. Источники в README.
-            </p>
-          </div>
+                    Применить всё
+                  </button>
+                )}
+              </div>
+
+              {fixes.length === 0 ? (
+                <p className="mt-4 text-sm text-bright">
+                  Дисбалансов нет: каждая группа либо в рабочем диапазоне, либо
+                  исключена.
+                </p>
+              ) : (
+                <ul className="mt-4 flex flex-col gap-2">
+                  {fixes.map((f, i) => (
+                    <li
+                      key={f.id}
+                      className="reveal flex items-start justify-between gap-3 rounded-[14px] border border-line bg-accent/[0.03] p-3.5"
+                      style={{ "--i": i } as React.CSSProperties}
+                    >
+                      <div className="min-w-0">
+                        <p className="text-[13px] text-bright">
+                          {muscleNames[f.muscleId]}
+                        </p>
+                        <p className="mt-1 text-[11px] leading-relaxed text-dim">
+                          {f.text}
+                        </p>
+                      </div>
+                      {builtIn ? (
+                        <span className="shrink-0 text-[11px] text-dim">
+                          {f.kind === "add" ? `+${f.sets}` : `−${f.sets}`}
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => applyFix(f)}
+                          className="btn-ghost shrink-0 px-3.5 py-1 text-[11px]"
+                        >
+                          {f.kind === "add" ? `+${f.sets}` : `−${f.sets}`}
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <p className="mt-4 text-[11px] leading-relaxed text-dim">
+                Границы объёма — ориентиры для среднего человека, переносимость
+                различается. Источники в README.
+              </p>
+            </div>
+          )}
 
           {/* Упражнения */}
           <div className="card p-5">

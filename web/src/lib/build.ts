@@ -123,7 +123,13 @@ const MAX_SLOTS = 8;
 export function buildProgram(
   minutes: number,
   loads: MuscleLoad[],
-  opts: { avoid?: MuscleId[]; name?: string; note?: string } = {},
+  opts: {
+    avoid?: MuscleId[];
+    name?: string;
+    note?: string;
+    /** Собрано помощником. Влияет на то, что показывать в карточке программы */
+    aiGenerated?: boolean;
+  } = {},
 ): Program {
   const avoid = new Set(opts.avoid ?? []);
   const done = new Map(loads.map((l) => [l.muscleId, l.setsDone]));
@@ -217,7 +223,7 @@ export function buildProgram(
     name: opts.name ?? `Программа на ${minutes} мин`,
     targetMin: minutes,
     slots,
-    aiGenerated: Boolean(opts.note),
+    aiGenerated: opts.aiGenerated ?? Boolean(opts.note),
     note: opts.note,
   };
 }

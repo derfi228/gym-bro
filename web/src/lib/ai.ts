@@ -32,6 +32,8 @@ export type AskContext = {
   level?: string;
   volume?: { muscle: string; done: number; target: number; status: string }[];
   avoid?: string[];
+  /** Что помощник запомнил про человека раньше */
+  facts?: string[];
 };
 
 export type AskResult =
@@ -130,6 +132,8 @@ export type ToolDeps = {
   buildProgram: (minutes: number, avoid: MuscleId[]) => string;
   /** Подсветить группы на схеме тела */
   showOnBody: (muscles: MuscleId[]) => string;
+  /** Запомнить факт о человеке. Возвращает текст для модели */
+  remember: (fact: string) => Promise<string>;
 };
 
 /** Последние подходы в упражнении — читаются из базы под правами человека */
@@ -184,6 +188,13 @@ export async function runTool(
       const muscles = musclesFrom(args.muscles);
       if (muscles.length === 0) return "Таких групп в приложении нет";
       return deps.showOnBody(muscles);
+    }
+
+    case "remember": {
+      const fact = typeof args.fact === "string" ? args.fact.trim() : "";
+      if (fact === "") return "Нечего запоминать";
+      if (fact.length > 300) return "Слишком длинно, сократите до одной фразы";
+      return await deps.remember(fact);
     }
 
     case "exercise_history": {

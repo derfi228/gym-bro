@@ -53,7 +53,16 @@ export async function ask(
   if (error) {
     // Ответ функции с кодом ошибки приходит сюда же, полезный текст — внутри
     const detail = await readError(error);
-    return { error: detail ?? "Не получилось связаться с помощником" };
+    if (detail) return { error: detail };
+    // Тела нет — значит запрос не дошёл: сеть, предполётная проверка браузера
+    // или функция не выложена. Пишем это прямо, иначе причину не найти
+    const name = (error as { name?: string })?.name ?? "";
+    return {
+      error:
+        name === "FunctionsFetchError"
+          ? "Помощник недоступен: функция не отвечает или не выложена"
+          : "Не получилось связаться с помощником",
+    };
   }
   if (!data?.message) return { error: "Пустой ответ помощника" };
   return { message: data.message };

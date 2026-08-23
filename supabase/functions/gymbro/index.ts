@@ -31,9 +31,13 @@ const MODEL = Deno.env.get("AI_MODEL") ?? "deepseek-v4-flash";
 /** Дальше разговор всё равно теряет связность, а счёт растёт */
 const MAX_MESSAGES = 24;
 
+// x-client-info и apikey клиент Supabase шлёт всегда. Не перечислить их
+// здесь — браузер отклонит запрос на предполётной проверке, и до функции
+// он даже не дойдёт
 const cors = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 

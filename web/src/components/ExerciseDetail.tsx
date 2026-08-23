@@ -11,6 +11,7 @@ import {
   evidenceLabels,
   muscleNames,
   scoreLabel,
+  sources,
 } from "@/lib/demo";
 import { useStore } from "@/lib/store";
 
@@ -106,7 +107,9 @@ export default function ExerciseDetail({
             </h2>
             <div className="mt-3 flex flex-wrap gap-1.5">
               <span className="chip">{muscleNames[exercise.primary]}</span>
-              <span className="chip">{evidenceLabels[exercise.evidence]}</span>
+              <span className="chip" title={sources[exercise.sourceId]?.note}>
+                {evidenceLabels[exercise.evidence]}
+              </span>
               <span className="chip">
                 {difficultyLabels[exercise.difficulty]}
               </span>

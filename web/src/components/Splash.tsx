@@ -9,13 +9,11 @@ export default function Splash() {
   const [phase, setPhase] = useState<Phase>("in");
 
   useEffect(() => {
-    // При отключённой анимации заставку не показываем вовсе
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setPhase("gone");
-      return;
-    }
-    const toOut = setTimeout(() => setPhase("out"), 1800);
-    const toGone = setTimeout(() => setPhase("gone"), 2450);
+    // При отключённой анимации заставка проскакивает мгновенно — тем же путём,
+    // что и обычная, просто с нулевой задержкой
+    const quick = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const toOut = setTimeout(() => setPhase("out"), quick ? 0 : 1800);
+    const toGone = setTimeout(() => setPhase("gone"), quick ? 0 : 2450);
     return () => {
       clearTimeout(toOut);
       clearTimeout(toGone);

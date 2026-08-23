@@ -176,7 +176,6 @@ type Store = {
   ) => void;
   /** Изменить число подходов в слоте */
   setSlotSets: (programId: string, slotKey: string, sets: number) => void;
-  setSlotRest: (programId: string, slotKey: string, rest: number) => void;
   addSlot: (programId: string, exerciseId: string, sets?: number) => void;
   removeSlot: (programId: string, slotKey: string) => void;
   /** Сдвинуть упражнение в порядке выполнения */
@@ -373,16 +372,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const v = Math.min(10, Math.max(1, Math.round(sets)));
       editSlots(programId, (slots) =>
         slots.map((s) => (s.key === slotKey ? { ...s, sets: v } : s)),
-      );
-    },
-    [editSlots],
-  );
-
-  const setSlotRest = useCallback(
-    (programId: string, slotKey: string, rest: number) => {
-      const v = Math.min(300, Math.max(30, Math.round(rest / 15) * 15));
-      editSlots(programId, (slots) =>
-        slots.map((s) => (s.key === slotKey ? { ...s, rest: v } : s)),
       );
     },
     [editSlots],
@@ -688,7 +677,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       logSet,
       swapExercise,
       setSlotSets,
-      setSlotRest,
       addSlot,
       removeSlot,
       moveSlot,
@@ -728,7 +716,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       logSet,
       swapExercise,
       setSlotSets,
-      setSlotRest,
       addSlot,
       removeSlot,
       moveSlot,
@@ -770,4 +757,3 @@ export function useStore() {
 }
 
 /** Название упражнения по id — удобный хелпер для интерфейса */
-export const nameOf = (id: string) => exerciseById(id).name;

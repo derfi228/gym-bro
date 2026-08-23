@@ -50,12 +50,6 @@ export type MuscleId =
 /** На какой проекции схемы видна мышца */
 export type BodyView = "front" | "back";
 
-export interface Muscle {
-  id: MuscleId;
-  /** Название для интерфейса */
-  name: string;
-}
-
 /**
  * Недельная нагрузка на мышцу: сколько рабочих подходов сделано
  * относительно целевого объёма, рассчитанного от роста/веса/возраста.
@@ -66,19 +60,6 @@ export interface MuscleLoad {
   setsTarget: number;
   /** setsDone / setsTarget; > 1 — риск перетренированности */
   ratio: number;
-}
-
-/**
- * Схема тела на конкретную дату — то, что рисуется на «человеке».
- * Строится из фото пользователя + записанных тренировок.
- */
-export interface BodyMap {
-  userId: string;
-  /** ISO-дата начала недели */
-  weekStart: string;
-  loads: MuscleLoad[];
-  /** URL фото в Supabase storage, если пользователь его загрузил */
-  photoUrl?: string;
 }
 
 /* ── Упражнения ───────────────────────────────────────────────────────────── */
@@ -172,45 +153,6 @@ export interface TrainingSplit {
 
 export type Equipment = "barbell" | "dumbbell" | "machine" | "bodyweight" | "cable";
 
-/* ── Тренировки и программы ───────────────────────────────────────────────── */
-
-export interface ExerciseSet {
-  reps: number;
-  /** кг; отсутствует для упражнений с собственным весом */
-  weightKg?: number;
-  /** Выполненный подход или ещё запланированный */
-  completed: boolean;
-}
-
-export interface WorkoutExercise {
-  exerciseId: string;
-  sets: ExerciseSet[];
-  /** Пауза между подходами, сек — приложение отсчитывает её само */
-  restSec: number;
-}
-
-export interface Workout {
-  id: string;
-  userId: string;
-  /** ISO-дата */
-  date: string;
-  exercises: WorkoutExercise[];
-  /** Фактическая длительность, мин */
-  durationMin?: number;
-  programId?: string;
-}
-
-export interface WorkoutProgram {
-  id: string;
-  name: string;
-  /** Под сколько минут собрана программа */
-  targetDurationMin: number;
-  level: TrainingLevel;
-  exercises: WorkoutExercise[];
-  /** Программа сгенерирована ИИ-помощником, а не выбрана из готовых */
-  aiGenerated: boolean;
-}
-
 /* ── Цели и ИИ-помощник ───────────────────────────────────────────────────── */
 
 export type GoalKind = "lift" | "weight";
@@ -255,23 +197,4 @@ export interface Challenge {
   friendId?: string;
   /** Серия недель подряд — «огонёк» */
   streakWeeks: number;
-}
-
-/* ── Абонемент ────────────────────────────────────────────────────────────── */
-
-export type SubscriptionPlan = "free" | "gymbro";
-
-export type SubscriptionStatus = "active" | "trial" | "expired" | "cancelled";
-
-/**
- * Доступ к платным функциям. План "gymbro" открывает ИИ-помощника.
- */
-export interface Subscription {
-  id: string;
-  userId: string;
-  plan: SubscriptionPlan;
-  status: SubscriptionStatus;
-  /** ISO-даты */
-  startedAt: string;
-  expiresAt?: string;
 }

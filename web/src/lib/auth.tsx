@@ -181,5 +181,3 @@ export function useAuth(): Auth {
   return ctx;
 }
 
-/** Открыт ли доступ к личным разделам */
-export const useSignedIn = () => useAuth().status === "in";

@@ -31,6 +31,13 @@ const MODEL = Deno.env.get("AI_MODEL") ?? "deepseek-v4-flash";
 /** Дальше разговор всё равно теряет связность, а счёт растёт */
 const MAX_MESSAGES = 24;
 
+/**
+ * Потолок на размер запроса. Счёт за модель идёт по объёму текста, а вошедший
+ * человек может прислать что угодно: без этого один запрос способен стоить
+ * столько же, сколько тысяча обычных.
+ */
+const MAX_CHARS = 24_000;
+
 // x-client-info и apikey клиент Supabase шлёт всегда. Не перечислить их
 // здесь — браузер отклонит запрос на предполётной проверке, и до функции
 // он даже не дойдёт
@@ -241,6 +248,11 @@ Deno.serve(async (req: Request) => {
   if (messages.length === 0) return json({ error: "Пустой разговор" }, 400);
   if (messages.length > MAX_MESSAGES)
     return json({ error: "Разговор слишком длинный, начните заново" }, 400);
+
+  const size = JSON.stringify(messages).length +
+    JSON.stringify(body.context ?? {}).length;
+  if (size > MAX_CHARS)
+    return json({ error: "Слишком много текста, начните заново" }, 400);
 
   const res = await fetch(API_URL, {
     method: "POST",

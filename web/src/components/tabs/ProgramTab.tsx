@@ -47,10 +47,16 @@ export default function ProgramTab({
   onNavigate: (tab: TabTarget) => void;
 }) {
   const { programs, activeProgramId, openProgram } = useStore();
-  const [openSlot, setOpenSlot] = useState<string | null>(null);
+  // Слот помнится вместе с программой: при переходе к другой он сам перестаёт
+  // считаться открытым, и сбрасывать его отдельно не нужно
+  const [opened, setOpened] = useState<{ program: string; slot: string } | null>(
+    null,
+  );
 
   const program = programs.find((p) => p.id === activeProgramId) ?? null;
-  useEffect(() => setOpenSlot(null), [activeProgramId]);
+  const openSlot = opened?.program === activeProgramId ? opened.slot : null;
+  const setOpenSlot = (slot: string | null) =>
+    setOpened(slot && activeProgramId ? { program: activeProgramId, slot } : null);
 
   if (!program) return <ProgramList onNavigate={onNavigate} />;
   if (openSlot)
@@ -1166,14 +1172,10 @@ function SlotDetail({
 }) {
   const { swapExercise, logSet } = useStore();
   const [logged, setLogged] = useState(0);
-  const builtIn = program.builtIn === true;
 
   const slot = program.slots.find((s) => s.key === slotKey)!;
   const ex = exerciseById(slot.exerciseId);
-  const alternatives = useMemo(
-    () => exercisesFor(ex.primary).filter((a) => a.id !== ex.id),
-    [ex],
-  );
+  const alternatives = exercisesFor(ex.primary).filter((a) => a.id !== ex.id);
 
   return (
     <div className="flex flex-col gap-4">

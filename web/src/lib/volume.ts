@@ -1,5 +1,5 @@
 import type { Exercise, MuscleId, MuscleLoad } from "@shared/types";
-import { demoExercises, exerciseById, exercisesFor } from "./demo";
+import { exerciseById, exercisesFor } from "./demo";
 import {
   landmarks,
   muscleIds,
@@ -164,9 +164,3 @@ export function candidatesFor(program: Program, m: MuscleId): Exercise[] {
   return exercisesFor(m).filter((e) => !used.has(e.id));
 }
 
-/** Все группы, которые вообще затрагивает упражнение */
-export const musclesOf = (ex: Exercise): MuscleId[] =>
-  muscleIds.filter((m) => contribution(ex, m) > 0);
-
-/** Сколько групп в каталоге вообще имеет упражнения — для подписи охвата */
-export const coveredMuscles = new Set(demoExercises.map((e) => e.primary));

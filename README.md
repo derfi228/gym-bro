@@ -347,14 +347,26 @@ cd mobile && npm install && npx expo start
 
 ### Первая настройка
 
-1. На `platform.deepseek.com` создайте ключ и пополните баланс.
+1. Возьмите ключ на `platform.deepseek.com` (или чужой, если им поделились).
 2. Положите ключ в переменные функции — он не должен попасть в репозиторий:
 
    ```bash
-   npx supabase secrets set DEEPSEEK_API_KEY=ваш-ключ --project-ref ecoxikheivexznsszjgf
+   npx supabase secrets set AI_API_KEY=ваш-ключ --project-ref ecoxikheivexznsszjgf
    ```
 
    Либо в панели: **Edge Functions → Secrets → Add new secret**.
+
+   Адрес и модель тоже читаются из переменных, но у них есть значения по
+   умолчанию — для ключа DeepSeek задавать ничего не нужно. Ключ OpenRouter
+   (начинается на `sk-or-v1-`) отличается только этим:
+
+   | Переменная | Значение |
+   |---|---|
+   | `AI_BASE_URL` | `https://openrouter.ai/api/v1/chat/completions` |
+   | `AI_MODEL` | `deepseek/deepseek-v4-flash-0731` |
+
+   Через OpenRouter та же модель выходит примерно вдесятеро дешевле:
+   $0.04 против $0.44 за миллион входных.
 3. Выложите функцию:
 
    ```bash

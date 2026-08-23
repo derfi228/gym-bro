@@ -12,11 +12,21 @@
  * Доступ закрыт проверкой токена на уровне Supabase: без входа сюда не попасть.
  */
 
-const DEEPSEEK_URL = "https://api.deepseek.com/chat/completions";
+/**
+ * Адрес и модель берутся из переменных, чтобы сменить поставщика можно было
+ * без правки кода. По умолчанию — DeepSeek напрямую.
+ *
+ * Для ключа OpenRouter (начинается на «sk-or-v1-») достаточно задать:
+ *   AI_BASE_URL = https://openrouter.ai/api/v1/chat/completions
+ *   AI_MODEL    = deepseek/deepseek-v4-flash-0731
+ * API у них одинаковый, поэтому больше ничего не меняется.
+ */
+const API_URL =
+  Deno.env.get("AI_BASE_URL") ?? "https://api.deepseek.com/chat/completions";
 
 // Быстрая модель. Pro втрое дороже и нужен, только если flash перестанет
 // справляться со сценариями, где он сам выбирает действие
-const MODEL = "deepseek-v4-flash";
+const MODEL = Deno.env.get("AI_MODEL") ?? "deepseek-v4-flash";
 
 /** Дальше разговор всё равно теряет связность, а счёт растёт */
 const MAX_MESSAGES = 24;
@@ -153,7 +163,7 @@ function systemPrompt(ctx: Context): string {
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
 
-  const key = Deno.env.get("DEEPSEEK_API_KEY");
+  const key = Deno.env.get("AI_API_KEY");
   if (!key) {
     return json({ error: "Ключ модели не задан на сервере" }, 500);
   }
@@ -170,7 +180,7 @@ Deno.serve(async (req: Request) => {
   if (messages.length > MAX_MESSAGES)
     return json({ error: "Разговор слишком длинный, начните заново" }, 400);
 
-  const res = await fetch(DEEPSEEK_URL, {
+  const res = await fetch(API_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -190,14 +200,18 @@ Deno.serve(async (req: Request) => {
 
   if (!res.ok) {
     const text = await res.text();
-    console.error("DeepSeek ответил", res.status, text);
+    console.error("Модель ответила", res.status, text);
     // Наружу не отдаём тело ответа: в нём может быть техническая изнанка
     return json(
       {
         error:
           res.status === 402
             ? "На счету модели закончились средства"
-            : "Модель не ответила, попробуйте ещё раз",
+            : res.status === 401
+              ? "Ключ модели не принят"
+              : res.status === 429
+                ? "Слишком часто — подождите немного"
+                : "Модель не ответила, попробуйте ещё раз",
       },
       502,
     );

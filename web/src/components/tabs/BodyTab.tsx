@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { MuscleId } from "@shared/types";
 import BodyPanel from "@/components/BodyPanel";
+import ProfileBar from "@/components/ProfileBar";
 import SessionMode from "@/components/SessionMode";
 import {
   difficultyLabels,
@@ -33,14 +34,7 @@ export default function BodyTab() {
 
   return (
     <div className="stagger flex flex-col gap-4">
-      <div className="card flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="chip">182 см</span>
-          <span className="chip">78 кг</span>
-          <span className="chip">24 года</span>
-        </div>
-        <p className="text-xs text-dim">Неделя 4–10 августа</p>
-      </div>
+      <ProfileBar week="Неделя 4–10 августа" />
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:items-start">
         <BodyPanel

@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { MuscleId, MuscleLoad } from "@shared/types";
+import { useAuth } from "@/lib/auth";
+import { ageFrom, ageLabel } from "@/lib/profile";
 import { buildProgram, programMinutes, useStore } from "@/lib/store";
 import { exerciseById, muscleNames } from "@/lib/demo";
 
@@ -26,6 +28,16 @@ export default function GymBroTab({
 }) {
   const store = useStore();
   const { loads, restrictions, addProgram, openProgram, addRestriction } = store;
+  const { profile } = useAuth();
+
+  // Пока профиль пустой, помощник о нём не заикается вместо выдуманных цифр
+  const profileLine = [
+    profile?.heightCm && `${profile.heightCm} см`,
+    profile?.weightKg && `${profile.weightKg} кг`,
+    profile?.birthYear && ageLabel(ageFrom(profile.birthYear)!),
+  ]
+    .filter(Boolean)
+    .join(" / ");
 
   const [thread, setThread] = useState<Msg[]>([
     {
@@ -62,7 +74,7 @@ export default function GymBroTab({
       return {
         text:
           `Сильнее всего отстают: ${list(lag.slice(0, 3))}.\n\n` +
-          `Считаю от вашего профиля 182 см / 78 кг / 24 года. ` +
+          (profileLine ? `Считаю от вашего профиля: ${profileLine}. ` : "") +
           `Добавлю их в ближайшую тренировку.`,
         cta: {
           label: "Показать на схеме",

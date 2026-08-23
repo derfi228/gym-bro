@@ -14,41 +14,10 @@ import {
   useState,
 } from "react";
 import type { Session } from "@supabase/supabase-js";
-import type { Sex, TrainingLevel, UserProfile } from "@shared/types";
+import type { UserProfile } from "@shared/types";
 import { authError } from "./authText";
+import { fromRow, toRow, type ProfileRow } from "./profile";
 import { getSupabase, isConfigured } from "./supabase";
-
-/** Строка таблицы profiles — в базе поля в змеином регистре */
-type ProfileRow = {
-  id: string;
-  name: string;
-  sex: Sex | null;
-  height_cm: number | null;
-  weight_kg: number | null;
-  birth_year: number | null;
-  level: TrainingLevel;
-  created_at: string;
-};
-
-const fromRow = (r: ProfileRow): UserProfile => ({
-  id: r.id,
-  name: r.name,
-  sex: r.sex ?? undefined,
-  heightCm: r.height_cm ?? undefined,
-  weightKg: r.weight_kg ?? undefined,
-  birthYear: r.birth_year ?? undefined,
-  level: r.level,
-  createdAt: r.created_at,
-});
-
-const toRow = (p: Partial<UserProfile>) => ({
-  ...(p.name !== undefined && { name: p.name }),
-  ...(p.sex !== undefined && { sex: p.sex }),
-  ...(p.heightCm !== undefined && { height_cm: p.heightCm }),
-  ...(p.weightKg !== undefined && { weight_kg: p.weightKg }),
-  ...(p.birthYear !== undefined && { birth_year: p.birthYear }),
-  ...(p.level !== undefined && { level: p.level }),
-});
 
 /** Что вернула операция входа: ошибка, либо просьба подтвердить почту */
 export type AuthResult = { error?: string; confirmEmail?: boolean };

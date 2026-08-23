@@ -28,10 +28,6 @@ export interface UserProfile {
   createdAt: string;
 }
 
-/** Полных лет на сегодня. Приблизительно: дня рождения мы не спрашиваем. */
-export const ageFrom = (birthYear: number | undefined): number | undefined =>
-  birthYear === undefined ? undefined : new Date().getFullYear() - birthYear;
-
 export type TrainingLevel = "novice" | "intermediate" | "advanced";
 
 /* ── Мышцы и анализ тела ──────────────────────────────────────────────────── */

@@ -37,9 +37,13 @@ jobs:
 
       - name: Build static export
         working-directory: web
-        # Сайт живёт по адресу /gym-bro, а не в корне домена
         env:
+          # Сайт живёт по адресу /gym-bro, а не в корне домена
           NEXT_PUBLIC_BASE_PATH: /gym-bro
+          # Публичные значения Supabase. Если их не задать, сборка пройдёт, но
+          # вход в аккаунт будет выключен, а приложение останется без него
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
         run: npm run build
 
       - name: Disable Jekyll

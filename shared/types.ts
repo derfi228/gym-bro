@@ -12,16 +12,25 @@ export type Sex = "male" | "female";
 export interface UserProfile {
   id: string;
   name: string;
-  sex: Sex;
+  /** Поля ниже необязательны: профиль заводится пустым вместе с аккаунтом */
+  sex?: Sex;
   /** см */
-  heightCm: number;
+  heightCm?: number;
   /** кг */
-  weightKg: number;
-  ageYears: number;
+  weightKg?: number;
+  /**
+   * Год рождения, а не возраст: возраст, записанный однажды, через год
+   * становится неверным, а пересчитывать его по дате записи негде.
+   */
+  birthYear?: number;
   /** Опыт тренировок — влияет на подбор программ */
   level: TrainingLevel;
   createdAt: string;
 }
+
+/** Полных лет на сегодня. Приблизительно: дня рождения мы не спрашиваем. */
+export const ageFrom = (birthYear: number | undefined): number | undefined =>
+  birthYear === undefined ? undefined : new Date().getFullYear() - birthYear;
 
 export type TrainingLevel = "novice" | "intermediate" | "advanced";
 

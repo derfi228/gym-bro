@@ -121,6 +121,29 @@ const tools = [
   },
 ];
 
+/**
+ * Роль из токена. Подпись проверил шлюз Supabase до вызова функции, поэтому
+ * здесь достаточно прочитать полезную часть.
+ *
+ * Проверка обязательна: публичный ключ сайта — тоже действительный токен, и
+ * без неё запросы к модели мог бы слать кто угодно, оплачивал бы их владелец
+ * ключа.
+ */
+function tokenRole(auth: string | null): string | null {
+  const token = auth?.replace(/^Bearer\s+/i, "");
+  const seg = token?.split(".")[1];
+  if (!seg) return null;
+  try {
+    const b64 = seg.replace(/-/g, "+").replace(/_/g, "/");
+    const payload = JSON.parse(
+      atob(b64 + "=".repeat((4 - (b64.length % 4)) % 4)),
+    );
+    return typeof payload.role === "string" ? payload.role : null;
+  } catch {
+    return null;
+  }
+}
+
 function systemPrompt(ctx: Context): string {
   const who = [
     ctx.sex === "female" ? "женщина" : ctx.sex === "male" ? "мужчина" : null,
@@ -162,6 +185,9 @@ function systemPrompt(ctx: Context): string {
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+
+  if (tokenRole(req.headers.get("Authorization")) !== "authenticated")
+    return json({ error: "Нужен вход в аккаунт" }, 401);
 
   const key = Deno.env.get("AI_API_KEY");
   if (!key) {

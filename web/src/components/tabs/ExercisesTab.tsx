@@ -13,6 +13,7 @@ import {
   difficultyPercent,
   orderKey,
   scoreLabel,
+  searchText,
 } from "@/lib/demo";
 import { useStore } from "@/lib/store";
 
@@ -92,7 +93,7 @@ export default function ExercisesTab({
         filter === "all" ||
         e.primary === filter ||
         e.secondary.includes(filter);
-      const byName = q === "" || e.name.toLowerCase().includes(q);
+      const byName = q === "" || searchText(e).includes(q);
       const byEquipment = !bodyweight || e.equipment === "bodyweight";
       return byMuscle && byName && byEquipment;
     });
@@ -197,8 +198,8 @@ export default function ExercisesTab({
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Поиск по названию"
-            aria-label="Поиск упражнения по названию"
+            placeholder="Поиск по названию или группе мышц"
+            aria-label="Поиск упражнения по названию или группе мышц"
             className="w-full rounded-pill border border-line bg-accent/[0.04] px-4 py-2 pr-9 text-sm text-bright outline-none transition-colors placeholder:text-dim focus:border-accent"
           />
           {query && (

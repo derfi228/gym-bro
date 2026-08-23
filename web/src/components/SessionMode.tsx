@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { exerciseById, muscleNames } from "@/lib/demo";
+import {
+  difficultyLabels,
+  equipmentLabels,
+  exerciseById,
+  exercisesFor,
+  muscleNames,
+  scoreLabel,
+} from "@/lib/demo";
 import {
   clock,
   countdownLeft,
@@ -63,8 +70,11 @@ export default function SessionMode() {
     endSession,
     pauseSession,
     resumeSession,
+    swapSessionExercise,
   } = useStore();
   const [confirming, setConfirming] = useState(false);
+  // Не флаг, а номер упражнения: на следующем список замен закрыт сам собой
+  const [swapAt, setSwapAt] = useState<number | null>(null);
   const now = useNow();
 
   const left = session ? countdownLeft(session, now) : 0;
@@ -87,9 +97,15 @@ export default function SessionMode() {
   const resting = restLeft > 0;
   const finished = isDone(session);
   const slot = session.slots[session.index];
+  const swapping = swapAt === session.index;
+  const ex = slot ? exerciseById(slot.exerciseId) : null;
   const kg = slot
     ? suggestKg(weights[slot.exerciseId], lowReps(slot.reps))
     : null;
+  // Список короткий, мемоизация тут дороже самого фильтра
+  const alternatives = ex
+    ? exercisesFor(ex.primary).filter((a) => a.id !== ex.id)
+    : [];
 
   return (
     <div className="flex flex-col gap-4">
@@ -186,52 +202,107 @@ export default function SessionMode() {
           <p className="text-xs text-dim">
             Упражнение {session.index + 1} из {session.slots.length}
           </p>
-          <h2 className="mt-2 font-serif text-4xl font-light text-bright">
-            {exerciseById(slot.exerciseId).name}
-          </h2>
+          <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
+            <h2 className="font-serif text-4xl font-light text-bright">
+              {exerciseById(slot.exerciseId).name}
+            </h2>
+            {alternatives.length > 0 && (
+              <button
+                onClick={() => setSwapAt(swapping ? null : session.index)}
+                aria-expanded={swapping}
+                className="chip-btn shrink-0"
+              >
+                {swapping ? "Отмена" : "Заменить"}
+              </button>
+            )}
+          </div>
           <p className="mt-3 text-sm text-dim">
             {muscleNames[exerciseById(slot.exerciseId).primary]} · подход{" "}
             {session.doneSets + 1} из {slot.sets}
           </p>
 
-          <p className="mt-5 font-serif text-3xl font-light text-accent-hi">
-            {slot.reps} раз
-            {kg !== null ? (
-              <>
-                {" "}
-                <span className="text-dim">с весом</span> {kg} кг
-              </>
-            ) : null}
-          </p>
-          {kg === null && (
-            <p className="mt-2 text-[11px] text-dim">
-              Вес не задан — впишите рабочий или пиковый в карточке упражнения,
-              и он начнёт подстраиваться по вашим ответам
-            </p>
+          {swapping ? (
+            <div className="mt-5">
+              <p className="kicker">
+                Другое упражнение на{" "}
+                {muscleNames[
+                  exerciseById(slot.exerciseId).primary
+                ].toLowerCase()}
+              </p>
+              <ul className="mt-3 flex flex-col gap-1.5">
+                {alternatives.map((alt) => (
+                  <li key={alt.id}>
+                    <button
+                      onClick={() => {
+                        swapSessionExercise(alt.id);
+                        setSwapAt(null);
+                      }}
+                      className="flex w-full items-center justify-between gap-3 rounded-[12px] border border-line px-3.5 py-2.5 text-left transition-colors hover:border-accent-dim hover:bg-accent/6"
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate text-[13px] text-bright">
+                          {alt.name}
+                        </span>
+                        <span className="text-[10px] text-dim">
+                          {difficultyLabels[alt.difficulty]} ·{" "}
+                          {equipmentLabels[alt.equipment]}
+                        </span>
+                      </span>
+                      <span className="shrink-0 font-serif text-base font-light text-accent">
+                        {scoreLabel(alt)}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-3 text-[11px] leading-relaxed text-dim">
+                Подходы, повторы и отдых останутся прежними, сделанное не
+                сгорит. Вес подставится из карточки нового упражнения
+              </p>
+            </div>
+          ) : (
+            <>
+              <p className="mt-5 font-serif text-3xl font-light text-accent-hi">
+                {slot.reps} раз
+                {kg !== null ? (
+                  <>
+                    {" "}
+                    <span className="text-dim">с весом</span> {kg} кг
+                  </>
+                ) : null}
+              </p>
+              {kg === null && (
+                <p className="mt-2 text-[11px] text-dim">
+                  Вес не задан — впишите рабочий или пиковый в карточке
+                  упражнения, и он начнёт подстраиваться по вашим ответам
+                </p>
+              )}
+
+              <div className="meter mt-5">
+                <span
+                  style={{ width: `${(session.doneSets / slot.sets) * 100}%` }}
+                />
+              </div>
+
+              <p className="kicker mt-6">Как прошёл подход</p>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {answers.map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => completeSet(f)}
+                    disabled={paused}
+                    className="btn-ghost py-2.5 text-[12px] disabled:cursor-default disabled:opacity-35"
+                  >
+                    {feedbackLabels[f]}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-3 text-[11px] leading-relaxed text-dim">
+                Ответ двигает рабочий вес: легко +2.5 кг, тяжело −2.5, не
+                доделал −5
+              </p>
+            </>
           )}
-
-          <div className="meter mt-5">
-            <span
-              style={{ width: `${(session.doneSets / slot.sets) * 100}%` }}
-            />
-          </div>
-
-          <p className="kicker mt-6">Как прошёл подход</p>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            {answers.map((f) => (
-              <button
-                key={f}
-                onClick={() => completeSet(f)}
-                disabled={paused}
-                className="btn-ghost py-2.5 text-[12px] disabled:cursor-default disabled:opacity-35"
-              >
-                {feedbackLabels[f]}
-              </button>
-            ))}
-          </div>
-          <p className="mt-3 text-[11px] leading-relaxed text-dim">
-            Ответ двигает рабочий вес: легко +2.5 кг, тяжело −2.5, не доделал −5
-          </p>
         </div>
       )}
     </div>

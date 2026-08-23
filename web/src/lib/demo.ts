@@ -1377,6 +1377,16 @@ export function orderKey(e: Exercise): number {
   return 100 + (e.rank ?? 99);
 }
 
+/**
+ * Строка, по которой ищет поиск во вкладке «Упражнения»: название плюс
+ * названия задействованных групп. Так «спина» находит тяги и подтягивания,
+ * даже если слова «спина» нет в названии упражнения.
+ */
+export const searchText = (e: Exercise) =>
+  [e.name, muscleNames[e.primary], ...e.secondary.map((m) => muscleNames[m])]
+    .join(" ")
+    .toLowerCase();
+
 export function exercisesFor(muscleId: MuscleId): Exercise[] {
   return demoExercises
     .filter((e) => e.primary === muscleId)

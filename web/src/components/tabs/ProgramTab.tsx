@@ -128,12 +128,12 @@ function ProgramList({ onNavigate }: { onNavigate: (tab: TabTarget) => void }) {
           </p>
           <input
             type="number"
-            min={10}
+            min={30}
             max={120}
             value={minutes}
             onChange={(e) =>
               setMinutes(
-                Math.min(120, Math.max(10, Number(e.target.value) || 10)),
+                Math.min(120, Math.max(30, Number(e.target.value) || 30)),
               )
             }
             aria-label="Длительность тренировки в минутах"
@@ -143,7 +143,7 @@ function ProgramList({ onNavigate }: { onNavigate: (tab: TabTarget) => void }) {
 
         <input
           type="range"
-          min={10}
+          min={30}
           max={120}
           step={1}
           value={minutes}
@@ -152,7 +152,7 @@ function ProgramList({ onNavigate }: { onNavigate: (tab: TabTarget) => void }) {
           className="mt-5 w-full accent-[var(--color-accent)]"
         />
         <div className="mt-1 flex justify-between text-[10px] text-dim">
-          <span>10 мин</span>
+          <span>30 мин</span>
           <span>120 мин</span>
         </div>
 
@@ -728,7 +728,7 @@ function ProgramBuilder({
         {!builtIn && (
           <input
             type="range"
-            min={10}
+            min={30}
             max={120}
             step={5}
             value={program.targetMin}

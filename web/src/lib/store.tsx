@@ -11,10 +11,9 @@ import type { ExerciseWeights, MuscleId, MuscleLoad } from "@shared/types";
 import {
   demoExercises,
   exerciseById,
-  exercisesFor,
   initialLoads,
 } from "./demo";
-import { contribution, landmarks, muscleIds, targetSets } from "./volume";
+import { contribution } from "./volume";
 import * as sess from "./session";
 export type { Session } from "./session";
 export {
@@ -27,6 +26,13 @@ export {
   suggestKg,
   type Feedback,
 } from "./session";
+import { slotCost, slotOf } from "./build";
+export {
+  buildProgram,
+  programMinutes,
+  slotCost,
+  slotOf,
+} from "./build";
 
 /* ── Модель программы в интерфейсе ────────────────────────────────────────── */
 
@@ -60,96 +66,6 @@ export type Program = {
    */
   aiScore?: number;
 };
-
-/** Минуты на упражнение: подходы × (работа + отдых) */
-export const slotCost = (s: ProgramSlot) => (s.sets * (40 + s.rest)) / 60;
-
-export const programMinutes = (p: Program) =>
-  Math.round(p.slots.reduce((sum, s) => sum + slotCost(s), 0));
-
-const restFor = (difficulty: string) =>
-  difficulty === "high" ? 150 : difficulty === "medium" ? 90 : 60;
-
-const repsFor = (muscle: MuscleId) =>
-  muscle === "abs" || muscle === "obliques" || muscle === "calves"
-    ? "12–15"
-    : "8–10";
-
-export const slotOf = (
-  exerciseId: string,
-  sets: number,
-  key: string,
-): ProgramSlot => {
-  const ex = exerciseById(exerciseId);
-  return {
-    key,
-    exerciseId,
-    sets,
-    reps: repsFor(ex.primary),
-    rest: restFor(ex.difficulty),
-  };
-};
-
-/**
- * Собирает программу под заданное время.
- *
- * Группы ранжируются по нехватке недельного объёма относительно целевого;
- * упражнения добираются по кругу, пока хватает времени, и каждое добавление
- * пересчитывает набранный объём — так одна группа не забирает всю тренировку.
- */
-export function buildProgram(
-  minutes: number,
-  loads: MuscleLoad[],
-  opts: { avoid?: MuscleId[]; name?: string; note?: string } = {},
-): Program {
-  const avoid = new Set(opts.avoid ?? []);
-  const done = new Map(loads.map((l) => [l.muscleId, l.setsDone]));
-
-  // Сколько подходов группа наберёт с учётом уже добавленных упражнений
-  const planned = new Map<MuscleId, number>();
-  const gained = (m: MuscleId) => (done.get(m) ?? 0) + (planned.get(m) ?? 0);
-
-  const slots: ProgramSlot[] = [];
-  const used = new Set<string>();
-  let spent = 0;
-
-  // До 8 упражнений: дальше тренировка перестаёт помещаться в разумное время
-  for (let round = 0; round < 8; round++) {
-    const next = muscleIds
-      .filter((m) => !avoid.has(m) && gained(m) < landmarks[m].mavLow)
-      .sort((a, b) => gained(a) / targetSets(a) - gained(b) / targetSets(b));
-
-    let added = false;
-    for (const m of next) {
-      const best = exercisesFor(m).find((e) => !used.has(e.id));
-      if (!best) continue;
-
-      const sets = gained(m) < landmarks[m].mev / 2 ? 4 : 3;
-      const slot = slotOf(best.id, sets, `${m}-${slots.length}`);
-      if (spent + slotCost(slot) > minutes) continue;
-
-      slots.push(slot);
-      used.add(best.id);
-      spent += slotCost(slot);
-      for (const mm of muscleIds) {
-        const c = contribution(best, mm);
-        if (c > 0) planned.set(mm, (planned.get(mm) ?? 0) + sets * c);
-      }
-      added = true;
-      break;
-    }
-    if (!added) break;
-  }
-
-  return {
-    id: `prog-${Date.now()}-${Math.round(spent)}`,
-    name: opts.name ?? `Программа на ${minutes} мин`,
-    targetMin: minutes,
-    slots,
-    aiGenerated: Boolean(opts.note),
-    note: opts.note,
-  };
-}
 
 /** Ключ замены упражнения внутри дня методики */
 export const splitSlotKey = (
@@ -259,6 +175,8 @@ type Store = {
   /** Подход с оценкой: правит рабочий вес и двигает тренировку */
   completeSet: (f: sess.Feedback) => void;
   skipRest: () => void;
+  /** Заменить текущее упражнение на другое для той же группы */
+  swapSessionExercise: (exerciseId: string) => void;
   pauseSession: () => void;
   resumeSession: () => void;
   endSession: () => void;
@@ -495,6 +413,27 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     [logSet, setWeight, weights]
   );
 
+  /**
+   * Замена на ходу: тренажёр занят, больно, нет снаряда. Группа обязана
+   * совпадать — иначе тренировка перестаёт быть той, которую начали.
+   * Подходы, повторы и отдых остаются от слота, сделанные подходы не сгорают.
+   */
+  const swapSessionExercise = useCallback((exerciseId: string) => {
+    setSession((s) => {
+      if (!s) return s;
+      const cur = s.slots[s.index];
+      if (!cur || cur.exerciseId === exerciseId) return s;
+      if (exerciseById(exerciseId).primary !== exerciseById(cur.exerciseId).primary)
+        return s;
+      return {
+        ...s,
+        slots: s.slots.map((sl, i) =>
+          i === s.index ? { ...sl, exerciseId } : sl
+        ),
+      };
+    });
+  }, []);
+
   const pauseSession = useCallback(
     () => setSession((s) => (s ? sess.pause(s) : s)),
     []
@@ -584,6 +523,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       startSession,
       completeSet,
       skipRest,
+      swapSessionExercise,
       pauseSession,
       resumeSession,
       endSession,
@@ -622,6 +562,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       startSession,
       completeSet,
       skipRest,
+      swapSessionExercise,
       pauseSession,
       resumeSession,
       endSession,

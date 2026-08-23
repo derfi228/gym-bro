@@ -142,7 +142,7 @@ export default function GymBroTab({
     { label: "Что у меня отстаёт?", run: askLagging },
     { label: "Есть перебор?", run: askOvertrained },
     { label: "Собери тренировку на 40 минут", run: () => buildFor(40) },
-    { label: "Собери короткую на 20 минут", run: () => buildFor(20) },
+    { label: "Собери короткую на 30 минут", run: () => buildFor(30) },
     { label: "Болит плечо", run: hurtShoulder },
   ];
 

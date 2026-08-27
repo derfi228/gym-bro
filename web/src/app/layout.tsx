@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Manrope } from "next/font/google";
 import "./globals.css";
 
@@ -20,11 +20,35 @@ const manrope = Manrope({
   display: "swap",
 });
 
+const TITLE = "Gym Bro — тренировки без лишнего";
+const DESCRIPTION =
+  "Схема тела по объёму нагрузки, программы под ваше время и ИИ-помощник. " +
+  "Пять функций вместо сотни вкладок.";
+
 export const metadata: Metadata = {
-  title: "Gym Bro — тренировки без лишнего",
-  description:
-    "Схема тела по объёму нагрузки, программы под ваше время и ИИ-помощник. " +
-    "Пять функций вместо сотни вкладок.",
+  metadataBase: new URL("https://gym-bro.ru"),
+  title: TITLE,
+  description: DESCRIPTION,
+  // Ссылка на сайт кидается в переписке: без этого видна голая строка адреса
+  openGraph: {
+    type: "website",
+    locale: "ru_RU",
+    siteName: "Gym Bro",
+    url: "https://gym-bro.ru",
+    title: TITLE,
+    description: DESCRIPTION,
+  },
+};
+
+export const viewport: Viewport = {
+  // Полоса браузера на телефоне красится в цвет фона: без этого над тёмным
+  // приложением висит белая полоса
+  themeColor: "#080b12",
+  // Браузер рисует свои элементы — выпадающие списки, полосы прокрутки —
+  // в тёмном варианте
+  colorScheme: "dark",
+  // Нижняя панель не должна прятаться под чёрточкой на телефонах без кнопки
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

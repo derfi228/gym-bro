@@ -120,7 +120,7 @@ function Shell() {
       {/* Нижняя панель */}
       <nav
         aria-label="Разделы приложения"
-        className="fixed inset-x-0 bottom-0 z-40 px-3 pb-3"
+        className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
       >
         <div
           role="tablist"

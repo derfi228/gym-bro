@@ -274,6 +274,9 @@ h3 {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    /* Нижняя граница для случаев, где отступы переопределены на месте:
+       иначе такие кнопки выходят по 30px и в них трудно попасть пальцем */
+    min-height: 36px;
     gap: 0.5rem;
     background: none;
     border: 1px solid rgb(var(--accent-rgb) / 0.3);
@@ -689,6 +692,154 @@ h3 {
   .typing > span {
     opacity: 0.65;
   }
+}
+
+/* ── Управляющие элементы ────────────────────────────────────────────────── */
+
+/* Ползунок времени. Родной выглядит чужеродно среди пилюль и карточек, а на
+   телефоне в четырёхпиксельную полосу не попасть: высота задаётся под палец,
+   видимая дорожка остаётся тонкой */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 28px;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 100px;
+  background: linear-gradient(
+    90deg,
+    var(--color-accent-dim),
+    var(--color-line)
+  );
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -7px;
+  border-radius: 100px;
+  background: var(--color-accent-hi);
+  border: 2px solid var(--color-ink);
+  box-shadow: 0 2px 10px rgb(0 0 0 / 0.5);
+  transition: transform 0.16s ease;
+}
+
+input[type="range"]:active::-webkit-slider-thumb,
+input[type="range"]:focus-visible::-webkit-slider-thumb {
+  transform: scale(1.15);
+}
+
+input[type="range"]::-moz-range-track {
+  height: 4px;
+  border-radius: 100px;
+  background: var(--color-line);
+}
+
+input[type="range"]::-moz-range-progress {
+  height: 4px;
+  border-radius: 100px;
+  background: var(--color-accent-dim);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 100px;
+  background: var(--color-accent-hi);
+  border: 2px solid var(--color-ink);
+}
+
+/* Стрелки у числовых полей ломают форму пилюли и появляются только при
+   наведении, из-за чего поле «дёргается» */
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Крестик очистки у поля поиска рисуется браузером и не попадает в палитру */
+input[type="search"]::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+}
+
+/* Вспышка при касании на телефоне — серый прямоугольник поверх скруглений.
+   Не убираем совсем, а красим в свой тон: отклик на нажатие нужен */
+* {
+  -webkit-tap-highlight-color: rgb(var(--accent-rgb) / 0.14);
+}
+
+/* Полоса прокрутки: светлая по умолчанию режет тёмный фон */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-line);
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: 100px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-idle);
+  background-clip: content-box;
+}
+
+/* Маленькие круглые кнопки трудно поймать пальцем. Область нажатия растянута
+   невидимо, вид не меняется — увеличивать сами кнопки значило бы разредить
+   плотные строки вроде «− 3 +» */
+.stepper,
+.chip-btn {
+  position: relative;
+}
+
+.stepper::after,
+.chip-btn::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 38px;
+  transform: translateY(-50%);
+}
+
+/* Пилюли фильтров стоят плотными рядами с просветом 6px, поэтому область
+   нажатия растягивается ровно на просвет: больше — и верхний ряд начнёт
+   перехватывать нажатия, предназначенные нижнему */
+button.rounded-pill {
+  position: relative;
+}
+
+button.rounded-pill::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 36px;
+  transform: translateY(-50%);
 }
 
 /* ── Доступность ─────────────────────────────────────────────────────────── */

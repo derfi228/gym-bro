@@ -37,15 +37,6 @@ const list = (ls: MuscleLoad[]) =>
     )
     .join(", ");
 
-/** Подпись под точками: видно, чем помощник занят, а не просто «ждите» */
-const statusFor = (tool: string) =>
-  ({
-    build_program: "собираю тренировку",
-    show_on_body: "открываю схему тела",
-    exercise_history: "смотрю историю подходов",
-    remember: "запоминаю",
-  })[tool] ?? "думаю";
-
 const REMEMBERED = "Запомнил: ";
 
 export default function GymBroTab({
@@ -65,11 +56,9 @@ export default function GymBroTab({
   const [facts, setFacts] = useState<Fact[]>([]);
   const [factsOpen, setFactsOpen] = useState(false);
   const [draft, setDraft] = useState("");
-  const [status, setStatus] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const [action, setAction] = useState<Action | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
-
-  const busy = status !== null;
 
   // Переписка и память подтягиваются при входе
   useEffect(() => {
@@ -88,7 +77,7 @@ export default function GymBroTab({
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }, [messages, status]);
+  }, [messages, busy]);
 
   const profileLine = [
     profile?.heightCm && `${profile.heightCm} см`,
@@ -167,7 +156,7 @@ export default function GymBroTab({
     const question = text.trim();
     if (question === "" || busy) return;
     setDraft("");
-    setStatus("думаю");
+    setBusy(true);
 
     const asked: ChatMessage = { role: "user", content: question };
     let convo = [...messages, asked];
@@ -200,7 +189,6 @@ export default function GymBroTab({
       if (calls.length === 0) break;
 
       for (const call of calls) {
-        setStatus(statusFor(call.function.name));
         const done: ChatMessage = {
           role: "tool",
           tool_call_id: call.id,
@@ -210,10 +198,9 @@ export default function GymBroTab({
         fresh.push(done);
         setMessages(convo);
       }
-      setStatus("думаю");
     }
 
-    setStatus(null);
+    setBusy(false);
     if (userId) await appendChat(userId, fresh);
   }
 
@@ -412,13 +399,16 @@ export default function GymBroTab({
 
         {busy && (
           <div className="flex justify-start">
-            <div className="flex items-center gap-2.5 rounded-[16px] border border-line bg-accent/[0.03] px-4 py-3">
+            <div
+              className="rounded-[16px] border border-line bg-accent/[0.03] px-4 py-3.5"
+              role="status"
+              aria-label="Помощник отвечает"
+            >
               <span className="typing" aria-hidden>
                 <span />
                 <span />
                 <span />
               </span>
-              <span className="text-[12px] text-dim">{status}</span>
             </div>
           </div>
         )}

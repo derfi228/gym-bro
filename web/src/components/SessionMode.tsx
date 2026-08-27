@@ -270,8 +270,7 @@ export default function SessionMode() {
                 ))}
               </ul>
               <p className="mt-3 text-[11px] leading-relaxed text-dim">
-                Подходы, повторы и отдых останутся прежними, сделанное не
-                сгорит. Вес подставится из карточки нового упражнения
+                Подходы и отдых останутся прежними, сделанное не сгорит
               </p>
             </div>
           ) : (
@@ -311,10 +310,6 @@ export default function SessionMode() {
                   </button>
                 ))}
               </div>
-              <p className="mt-3 text-[11px] leading-relaxed text-dim">
-                Ответ двигает рабочий вес: легко +2.5 кг, тяжело −2.5, не
-                доделал −5
-              </p>
             </>
           )}
         </div>

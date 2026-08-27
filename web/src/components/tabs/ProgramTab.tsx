@@ -178,18 +178,11 @@ function ProgramList({ onNavigate }: { onNavigate: (tab: TabTarget) => void }) {
         >
           Собрать программу
         </button>
-        <p className="mt-3 text-[11px] leading-relaxed text-dim">
-          Отстающие группы идут первыми, перебранные пропускаются
-        </p>
       </div>
 
       {/* Своя тренировка из каталога */}
       <div className="card p-5 sm:p-6">
         <p className="kicker">Создать свою программу</p>
-        <p className="mt-3 text-[13px] leading-relaxed text-dim">
-          Откроется каталог в режиме выбора: отмечаете упражнения, задаёте
-          название и подтверждаете галочкой.
-        </p>
         <button
           onClick={() => {
             startPicker();
@@ -251,18 +244,12 @@ function ProgramList({ onNavigate }: { onNavigate: (tab: TabTarget) => void }) {
 
               <p className="mt-3 text-[11px] text-dim">
                 {s.days.length}{" "}
-                {s.days.length === 1 ? "тренировка" : "тренировки"} в цикле —
-                открыть список упражнений
+                {s.days.length === 1 ? "тренировка" : "тренировки"} в цикле
               </p>
             </button>
           </li>
         ))}
       </ul>
-      <p className="px-1 text-[11px] leading-relaxed text-dim">
-        Оценка отражает, насколько методика ложится на данные о недельном объёме
-        и частоте — не на популярность.
-      </p>
-
       {/* Заготовки GymBro */}
       <p className="section-label mt-3 px-1">Разовые тренировки</p>
       <ProgramCards
@@ -553,11 +540,6 @@ function SplitDetail({
           </ul>
         </div>
       ))}
-
-      <p className="px-1 text-[11px] leading-relaxed text-dim">
-        Подходы и повторы задаёт методика; конкретные упражнения можно менять на
-        любые для той же группы.
-      </p>
     </div>
   );
 }
@@ -855,11 +837,6 @@ function ProgramBuilder({
                 ))}
               </ul>
             )}
-            <p className="mt-4 text-[11px] leading-relaxed text-dim">
-              Подход целевой мышце засчитывается полностью, вспомогательной —
-              наполовину. Шкала — от объёма, который разумно взять за одну
-              тренировку: половина недельного диапазона.
-            </p>
           </div>
         </div>
 

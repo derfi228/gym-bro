@@ -459,8 +459,7 @@ export default function GymBroTab({
           </button>
         </form>
 
-        <p className="kicker mt-6">Или готовые вопросы</p>
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-5 flex flex-wrap gap-2">
           {actions.map((a) => (
             <button
               key={a.label}
@@ -472,13 +471,6 @@ export default function GymBroTab({
             </button>
           ))}
         </div>
-        <p className="mt-4 text-[11px] leading-relaxed text-dim">
-          Готовые вопросы считаются на месте и работают без модели. Свободный
-          вопрос уходит модели: она видит профиль, объём за неделю и то, что
-          запомнила, умеет собрать тренировку, открыть группу на схеме и
-          посмотреть историю подходов. Тренировки собирает приложение, а не
-          модель — цифры она не выдумывает.
-        </p>
       </div>
     </div>
   );

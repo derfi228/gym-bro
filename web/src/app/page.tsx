@@ -40,15 +40,14 @@ const tabs: {
 /**
  * Что закрыто без аккаунта. Каталог упражнений открыт всем — он одинаковый
  * для всех и ни к кому не привязан. Остальное считается от человека и хранится
- * за ним, поэтому просит войти. null — раздел открыт.
+ * за ним, поэтому просит войти.
  */
-const needsAccount: Record<TabId, string | null> = {
-  body: "Схема тела и недельный объём",
-  exercises: null,
-  program: "Свои тренировки и их история",
-  gymbro: "Помощник",
-  challenges: "Челленджи",
-};
+const needsAccount = new Set<TabId>([
+  "body",
+  "program",
+  "gymbro",
+  "challenges",
+]);
 
 export default function App() {
   return (
@@ -77,7 +76,7 @@ function Shell() {
   const { status } = useAuth();
 
   // Пока вход не настроен в сборке, приложение работает целиком, без замков
-  const locked = status === "out" ? needsAccount[tab] : null;
+  const locked = status === "out" && needsAccount.has(tab);
 
   return (
     <>
@@ -106,7 +105,7 @@ function Shell() {
       {/* Содержимое вкладки */}
       <main className="mx-auto w-full max-w-4xl flex-1 px-4 pt-5 pb-32 sm:px-5">
         {locked ? (
-          <NeedsAccount what={locked} />
+          <NeedsAccount />
         ) : (
           <>
             {tab === "body" && <BodyTab />}

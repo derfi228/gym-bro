@@ -151,13 +151,6 @@ export default function ProfileBar({ week }: { week: string }) {
         <p className="text-xs text-dim">{week}</p>
       </div>
 
-      {!open && filled.length === 0 && (
-        <p className="mt-2.5 text-[11px] leading-relaxed text-dim">
-          Рост, вес и возраст нужны, чтобы считать объём под вас, а не по
-          среднему человеку
-        </p>
-      )}
-
       {open && (
         <div className="mt-5 border-t border-line pt-5">
           <div className="flex flex-wrap gap-4">

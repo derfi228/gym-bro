@@ -237,7 +237,7 @@ export function StartGate() {
 
 /* ── Заглушка закрытого раздела ───────────────────────────────────────────── */
 
-export function NeedsAccount({ what }: { what: string }) {
+export function NeedsAccount() {
   const { openPanel } = useAuth();
   return (
     <div className="card card-lit p-7 text-center sm:p-9">
@@ -245,8 +245,7 @@ export function NeedsAccount({ what }: { what: string }) {
         Нужен аккаунт
       </p>
       <p className="mx-auto mt-4 max-w-sm text-sm leading-relaxed text-dim">
-        Раздел «{what}» работает с вашими личными данными, поэтому нужен
-        аккаунт. Каталог упражнений открыт и без него.
+        Каталог упражнений открыт и без него.
       </p>
       <button onClick={() => openPanel("signup")} className="btn mt-7">
         Создать аккаунт
